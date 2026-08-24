@@ -26,6 +26,23 @@
   --gut: clamp(20px, 5vw, 72px);
   --maxw: 1240px;
   --slash: -18deg;
+
+  /* -------- glass material (top bar chrome, pipeline/feature cards, hero
+     buttons) -------- tinted relative to the theme's own ink, so a "glass"
+     surface reads as a different density of the same paper rather than a
+     literal white paint layer on white paper. */
+  --glass-bg: rgba(11, 11, 11, 0.035);
+  --glass-shadow: 0 8px 24px -10px rgba(11, 11, 11, 0.22), 0 1px 2px rgba(11, 11, 11, 0.08);
+
+  /* the edge-light glow itself stays pure white in both themes — real light
+     doesn't change hue with the color scheme. */
+  --glow-color: rgba(255, 255, 255, 1);
+  --glow-60: rgba(255, 255, 255, 0.6);
+  --glow-50: rgba(255, 255, 255, 0.5);
+  --glow-40: rgba(255, 255, 255, 0.4);
+  --glow-30: rgba(255, 255, 255, 0.3);
+  --glow-20: rgba(255, 255, 255, 0.2);
+  --glow-10: rgba(255, 255, 255, 0.1);
 }
 [data-theme='dark'] {
   --accent: #43ffd2;
@@ -37,6 +54,9 @@
   --panel: #0a0a0a;
   --brush: 67, 255, 210;
   --shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 *,
@@ -88,6 +108,70 @@ a {
   padding-inline: var(--gut);
 }
 
+/* ---------- glass material ----------
+   Ported from React Bits' BorderGlow: an edge-proximity value (0 at center,
+   100 at the boundary, set by lib/edge-glow.ts on pointermove) gates the
+   opacity of a directional glow, and a conic-gradient mask swept to
+   --cursor-angle keeps that glow lit only on whichever edge the cursor is
+   nearest — so it travels around the border as the cursor moves, rather
+   than sitting as a static highlight. cone-spread of 5 keeps the lit arc to
+   roughly a tenth of the perimeter — a beam, not a band. Every surface using
+   this (.glass) stays flat and plainly transparent inside; the "glass" read
+   is carried entirely by this border glow, never by interior blur or sheen. */
+.glass,
+.top {
+  --edge-proximity: 0;
+  --cursor-angle: 45deg;
+  --edge-sensitivity: 30;
+  --cone-spread: 5;
+  --glow-padding: 20px;
+}
+.glass {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  background: var(--glass-bg);
+}
+.edge-light {
+  position: absolute;
+  inset: calc(var(--glow-padding) * -1);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  -webkit-mask-image: conic-gradient(
+    from var(--cursor-angle) at center,
+    black calc(var(--cone-spread) * 1%),
+    transparent calc((var(--cone-spread) + 3) * 1%),
+    transparent calc((100 - var(--cone-spread) - 3) * 1%),
+    black calc((100 - var(--cone-spread)) * 1%)
+  );
+  mask-image: conic-gradient(
+    from var(--cursor-angle) at center,
+    black calc(var(--cone-spread) * 1%),
+    transparent calc((var(--cone-spread) + 3) * 1%),
+    transparent calc((100 - var(--cone-spread) - 3) * 1%),
+    black calc((100 - var(--cone-spread)) * 1%)
+  );
+  opacity: calc((var(--edge-proximity) - var(--edge-sensitivity)) / (100 - var(--edge-sensitivity)));
+  mix-blend-mode: plus-lighter;
+  transition: opacity 0.3s ease-out;
+}
+.edge-light::before {
+  content: '';
+  position: absolute;
+  inset: var(--glow-padding);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--glow-color), inset 0 0 1px 0 var(--glow-60), inset 0 0 3px 0 var(--glow-50),
+    inset 0 0 6px 0 var(--glow-40), inset 0 0 15px 0 var(--glow-30), inset 0 0 25px 2px var(--glow-20),
+    inset 0 0 50px 2px var(--glow-10), 0 0 1px 0 var(--glow-60), 0 0 3px 0 var(--glow-50), 0 0 6px 0 var(--glow-40),
+    0 0 15px 0 var(--glow-30), 0 0 25px 2px var(--glow-20), 0 0 50px 2px var(--glow-10);
+}
+@media (prefers-reduced-motion: reduce) {
+  .edge-light {
+    display: none;
+  }
+}
+
 /* ---------- top bar ---------- */
 .top {
   position: sticky;
@@ -97,6 +181,9 @@ a {
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
   background: color-mix(in srgb, var(--bg) 78%, transparent);
   border-bottom: 1px solid var(--rule);
+  --glow-padding: 10px;
+  isolation: isolate;
+  overflow: visible;
 }
 .top .wrap {
   display: flex;
@@ -266,35 +353,44 @@ a {
   gap: 12px;
   margin-top: 34px;
 }
+/* Glass pills — rounded rather than the site's usual 2px radius, deliberately:
+   this material is the one place quoting iOS 26 "Liquid Glass," which reads
+   in continuous pill/capsule shapes, distinct from the sharp mono-grid
+   chrome everywhere else. */
 .btn {
+  --glow-padding: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   min-height: 48px;
   padding: 0 22px;
-  border-radius: 2px;
+  border-radius: 24px;
   text-decoration: none;
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  border: 1px solid var(--accent);
+  border: none;
   transition: transform 0.14s ease, background-color 0.14s, color 0.14s;
 }
+.btn .label {
+  position: relative;
+  z-index: 1;
+}
 .btn-solid {
-  background: var(--accent);
+  background: color-mix(in srgb, var(--accent) 72%, var(--glass-bg));
   color: var(--bg);
 }
 .btn-ghost {
   color: var(--accent);
-  background: transparent;
+  background: var(--glass-bg);
 }
 .btn:hover {
   transform: translateY(-2px);
 }
 .btn-ghost:hover {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--glass-bg));
 }
 .btn:focus-visible {
   outline: 2px solid var(--accent);
@@ -350,9 +446,7 @@ a {
 /* ---------- pipeline (a real sequence, so it is numbered) ---------- */
 .pipe {
   display: grid;
-  gap: 1px;
-  background: var(--rule);
-  border: 1px solid var(--rule);
+  gap: 20px;
 }
 @media (min-width: 820px) {
   .pipe {
@@ -360,11 +454,10 @@ a {
   }
 }
 .step {
-  background: var(--bg);
+  --glow-padding: 16px;
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
   padding: clamp(24px, 3.4vw, 38px);
-}
-.sec-alt .step {
-  background: var(--panel);
 }
 .step-n {
   font-family: var(--mono);
@@ -417,6 +510,22 @@ a {
   .row {
     grid-template-columns: minmax(190px, 258px) minmax(0, 1fr);
   }
+}
+/* Features' rows specifically become glass cards (approved scope: pipeline +
+   feature cards + buttons + top bar). Security reuses the plain .rows/.row
+   above unchanged — scoped here so the two don't collide. */
+.rows--cards {
+  border-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.rows--cards .row {
+  --glow-padding: 16px;
+  border-bottom: 0;
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  padding: clamp(24px, 3.6vw, 38px);
 }
 .row-label {
   display: flex;

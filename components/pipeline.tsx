@@ -1,4 +1,5 @@
 import { RevealSection } from './reveal-section';
+import { GlassSurface } from './glass-surface';
 import { pipelineSteps } from '@/lib/content';
 
 export function Pipeline() {
@@ -15,11 +16,11 @@ export function Pipeline() {
         </div>
         <div className="pipe">
           {pipelineSteps.map((step) => (
-            <article className="step" key={step.number}>
+            <GlassSurface as="article" className="step glass" key={step.number}>
               <p className="step-n">{step.number}</p>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
-            </article>
+            </GlassSurface>
           ))}
         </div>
       </div>

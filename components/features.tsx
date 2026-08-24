@@ -1,4 +1,5 @@
 import { RevealSection } from './reveal-section';
+import { GlassSurface } from './glass-surface';
 import { features } from '@/lib/content';
 
 export function Features() {
@@ -10,9 +11,9 @@ export function Features() {
           <h2 className="sec-title">What is in the build</h2>
           <p className="sec-lede">Everything below is shipping in v1.4.2 and proven on a physical iPhone.</p>
         </div>
-        <div className="rows">
+        <div className="rows rows--cards">
           {features.map((feature) => (
-            <article className="row" key={feature.en}>
+            <GlassSurface as="article" className="row glass" key={feature.en}>
               <div className="row-label">
                 <span className="row-jp">{feature.jp}</span>
                 <span className="row-en">{feature.en}</span>
@@ -28,7 +29,7 @@ export function Features() {
                   </ul>
                 )}
               </div>
-            </article>
+            </GlassSurface>
           ))}
         </div>
       </div>

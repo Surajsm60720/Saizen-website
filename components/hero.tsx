@@ -1,3 +1,5 @@
+import { GlassSurface } from './glass-surface';
+
 export function Hero() {
   return (
     <section className="hero">
@@ -18,12 +20,12 @@ export function Hero() {
           gets released. Everything runs on your device.
         </p>
         <div className="cta">
-          <a className="btn btn-solid" href="https://github.com/Surajsm60720/Saizen/releases">
-            Get the IPA
-          </a>
-          <a className="btn btn-ghost" href="https://github.com/Surajsm60720/Saizen">
-            Read the source
-          </a>
+          <GlassSurface as="a" className="btn btn-solid" href="https://github.com/Surajsm60720/Saizen/releases">
+            <span className="label">Get the IPA</span>
+          </GlassSurface>
+          <GlassSurface as="a" className="btn btn-ghost" href="https://github.com/Surajsm60720/Saizen">
+            <span className="label">Read the source</span>
+          </GlassSurface>
         </div>
         <p className="hero-note">
           <span>Next.js + Capacitor 7 + Swift</span>
