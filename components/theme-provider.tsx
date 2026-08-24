@@ -51,11 +51,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     void overlay.offsetWidth;
     overlay.classList.add('cut');
 
-    window.setTimeout(() => applyTheme(next), 250);
+    // Matches the 900ms .slashfx.cut animation in globals.css — swap at ~40%
+    // of total duration (360ms), clear busy shortly after it finishes (920ms).
+    window.setTimeout(() => applyTheme(next), 360);
     window.setTimeout(() => {
       overlay.classList.remove('cut');
       busyRef.current = false;
-    }, 640);
+    }, 920);
   }
 
   return (

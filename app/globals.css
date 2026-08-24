@@ -268,7 +268,11 @@ a {
   will-change: transform, opacity;
 }
 .slashfx.cut {
-  animation: cut 620ms cubic-bezier(0.72, 0, 0.18, 1);
+  /* Slower (900ms, was 620ms) and a gentler curve — cubic-bezier(.72,0,.18,1)
+     holds still at both ends and snaps through the middle, which reads as a
+     flash, not a glide. cubic-bezier(.22,1,.36,1) is a smooth, continuous
+     ease-out the whole way through. */
+  animation: cut 900ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes cut {
   0% {
