@@ -293,7 +293,6 @@ export function Convergence() {
     <section className="sec conv">
       <div className="wrap">
         <div className="sec-head">
-          <p className="sec-jp">統合</p>
           <h2 className="sec-title">Every piece, one build</h2>
           <p className="sec-lede">
             Modules, player, downloads, accounts, security — everything above compiles into one binary you sideload

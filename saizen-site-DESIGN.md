@@ -69,7 +69,7 @@ The site uses **the app's own typefaces** — Puritan and Quando, already shippi
 | Display | **Quando** | Wordmark, section titles, feature headings, tagline. Used with restraint — never for body copy. |
 | Body | **Puritan** | All prose. |
 | Utility | System mono stack (`ui-monospace, SFMono-Regular, Menlo`) | Eyebrows, version strings, chips, table headers, buttons. Always uppercase with wide tracking (`.11em`–`.22em`). |
-| CJK | System serif stack (`Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, Songti SC`) | 最善 and section labels. |
+| CJK | System serif stack (`Hiragino Mincho ProN, Yu Mincho, Noto Serif JP, Songti SC`) | 最善 in the hero lockup only — see amendment §11c. |
 
 **Do not load a webfont for CJK.** Full Japanese font files are megabytes; there are only a handful of glyphs on the page. System stacks render them correctly and cost nothing.
 
@@ -88,16 +88,14 @@ The site uses **the app's own typefaces** — Puritan and Quando, already shippi
 
 **Section rhythm:** every section separated by a 1px `--rule` hairline, alternating `--bg` / `--panel` grounds. Vertical padding `clamp(60px, 10vh, 116px)`.
 
-**Section headers** carry a three-part stack:
+**Section headers** carry a two-part stack:
 ```
-視聴経路              ← CJK label, accent
-How a stream…        ← Quando title
-one-line lede         ← Puritan, --ink-soft
+What is in the build   ← Quando title
+one-line lede           ← Puritan, --ink-soft
 ```
+(Amendment, §11c: CJK section labels were dropped everywhere except the hero kanji lockup — see there for why.)
 
-**Feature rows** use a two-column split at ≥900px (`minmax(190px,258px)` label rail + content), stacking below. The label rail pairs a CJK term with its romanised English in mono — this encodes the same bilingual logic the app's own naming uses.
-
-**Numbering discipline:** `01 / 02 / 03` appears **only** on the playback pipeline, because that is a genuine ordered sequence (module resolves → candidate ranks → player takes over). Features are not numbered — they are not a sequence, and numbering them would be decoration.
+**Feature rows** use a two-column split at ≥900px (`minmax(190px,258px)` label rail + content), stacking below. The label rail carries the romanised English name in mono.
 
 ---
 
@@ -176,24 +174,30 @@ When the app ships a new feature, update the site copy from the README changelog
 
 ---
 
-## 11. Amendment — glass material and the convergence section
+## 11. Amendment — glass material, the convergence section, and two later cuts
 
-Two additions layered on top of the rules above, added after the MVP shipped. Both are deliberate, scoped exceptions — everything in §1–10 still governs the rest of the page.
+Additions and one subtraction layered on top of the rules above, added after the MVP shipped. Everything in §1–10 still governs the rest of the page except where noted below.
 
-### 11a. Glass material (top bar, pipeline/feature cards, hero buttons)
+### 11a. Glass material (top bar, feature cards, hero buttons)
 
-The top bar, the pipeline steps, the feature rows, and the two hero CTAs use a "glass" treatment: a flat translucent fill (`--glass-bg`, ink-tinted relative to the theme's own background — never literal white paint on white paper) plus a directional edge-light glow, ported from React Bits' `BorderGlow` component (its edge-proximity and cursor-angle math, unmodified; its mesh-gradient `colors` prop dropped entirely for plain graded white — real light doesn't change hue with the theme).
+The top bar, the feature rows, and the two hero CTAs use a "glass" treatment: a flat translucent fill (`--glass-bg`, ink-tinted relative to the theme's own background — never literal white paint on white paper) plus a directional edge-light glow, ported from React Bits' `BorderGlow` component (its edge-proximity and cursor-angle math, unmodified; its mesh-gradient `colors` prop dropped entirely for plain graded white — real light doesn't change hue with the theme).
 
 This bends two rules from §3/§5/§7 on purpose:
 - **"No third hue, no gradients as decoration"** — the edge-light is a second gradient beyond the blade's falloff. It stays white in both themes rather than introducing a hue, which is the compromise that made this acceptable.
-- **Corner radius** — pipeline/feature cards round to 16px and hero buttons to a 24px pill, breaking from the site's otherwise near-flat 2px radius everywhere else (buttons, toggle, chips, table wrapper). This is deliberate, not drift: rounded, continuous-corner shapes are specifically what reads as "iOS 26 Liquid Glass," which is the thing this material exists to quote. Nothing outside this material adopts the rounder radius.
+- **Corner radius** — feature cards round to 16px and hero buttons to a 24px pill, breaking from the site's otherwise near-flat 2px radius everywhere else (buttons, toggle, chips, table wrapper). This is deliberate, not drift: rounded, continuous-corner shapes are specifically what reads as "iOS 26 Liquid Glass," which is the thing this material exists to quote. Nothing outside this material adopts the rounder radius.
 
 The glow itself: an `--edge-proximity` value (0 at a surface's center, 100 at its boundary) gates opacity, and a conic-gradient mask swept to `--cursor-angle` keeps the glow lit only on whichever edge the cursor is nearest — a beam that travels the border as the cursor moves, covering roughly a tenth of the perimeter at once, never the interior. Implementation: `lib/edge-glow.ts` (the hook), `components/glass-surface.tsx` + `components/edge-light.tsx` (the DOM), `.glass`/`.edge-light` in `app/globals.css` (the visuals). Respects `prefers-reduced-motion` (the glow is hidden outright, not just slowed).
 
-Security's rows and the install table deliberately stay on the original flush hairline-list treatment — the glass material's scope is top bar + pipeline + features + hero buttons only.
+The install table deliberately stays on the original flush treatment — the glass material's scope is top bar + features + hero buttons only.
 
 ### 11b. Convergence section
 
-A new section, `統合` ("integration"), sits at the end of the page, after Install and before the footer. Every labeled fragment tag is real chip text flattened straight from `lib/content.ts` (`features.flatMap(f => f.chips ?? [])`) — not a hand-picked or placeholder list, so it stays in sync automatically as features change. A small number (10) of dim, unlabeled canvas points add background texture only; the "many things coming together" read is carried by the real content, not by particle count.
+A new section, "Every piece, one build," sits at the end of the page, after Install and before the footer. Every labeled fragment tag is real chip text flattened straight from `lib/content.ts` (`features.flatMap(f => f.chips ?? [])`) — not a hand-picked or placeholder list, so it stays in sync automatically as features change. A small number (10) of dim, unlabeled canvas points add background texture only; the "many things coming together" read is carried by the real content, not by particle count.
 
 The sequence plays once, triggered by `IntersectionObserver` when the section scrolls into view — never on page load, never a loop, matching the discipline already established for scroll reveal elsewhere on the page. Canvas is used for the point swarm and the ink-burst finale (hundreds of DOM nodes would be the wrong tool); the labeled tags themselves are real, accessible-if-unhidden DOM text, not canvas-drawn. Disabled under `prefers-reduced-motion` (jumps straight to the resolved mark).
+
+### 11c. Two cuts: the playback-pipeline and security sections; CJK scope narrowed to the hero
+
+Two full sections were removed outright, not just restyled: **"How a stream reaches the screen"** (the numbered `01/02/03` pipeline walkthrough) and **"Secrets stay out of the build"** (the security section). Judgment call: the mechanics of how playback resolves and the specifics of the app's secret-handling read as more detail than a public-facing site should volunteer, even though every claim in them was accurate. `components/pipeline.tsx`, `components/security.tsx`, and their content in `lib/content.ts` (`PipelineStep`, `SecurityItem`, `pipelineSteps`, `securityItems`) are deleted, not just unused. §5's "numbering discipline" rule is now moot — there is no numbered section left on the page.
+
+At the same time, the CJK section-label pattern (§5's three-part header stack, and the per-row CJK term in feature rows) was dropped **everywhere except the hero's 最善 kanji lockup**. This was a scope narrowing, not a reversal of §2's Japanese-influence thesis — the hero mark, the reading line, and the Puritan/Quando pairing still carry that identity; CJK glyphs elsewhere (section eyebrows, per-feature terms) were judged to be spreading that identity thin rather than reinforcing it. `.sec-jp`, `.row-jp`, and the top bar's kanji mark span are removed from markup and CSS; `Feature.jp` is removed from `lib/content.ts`'s type and data. Section headers are now a two-part stack (title + lede, no CJK eyebrow) everywhere but the hero.

@@ -77,13 +77,14 @@ Source content from `README.md` in `Surajsm60720/Saizen` — specifically the Fe
 
 | # | Section | Content | Notes |
 |---|---|---|---|
-| 1 | Sticky top bar | 最善 SAIZEN wordmark, version, theme toggle | Blurred, translucent, hairline bottom border |
-| 2 | Hero | 最善 lockup, wordmark, reading, tagline, lede, two CTAs, tech meta line | Typographic hero — no device mock, no screenshots in v1 |
-| 3 | Playback path | 3 numbered steps: modules resolve → candidates rank to HLS/MP4 → custom AVPlayer | **Only** section that gets numbering (it is a real sequence) |
-| 4 | Features | Browse, Search, Detail, Schedule, Player, Downloads, Accounts, Incognito, Appearance | Two-column rows with CJK+EN label rail; not numbered |
-| 5 | Security | Keys (no secrets in build, gitignored local secret, fail-closed IPA scan), Transport (HTTPS-only modules, host allowlist, Keychain allowlist) | Real claims from the README security section |
-| 6 | Install | Honest table of the four distribution methods + version-numbering callout | Free Apple ID / ~7-day certs stated plainly |
-| 7 | Footer | Source, Releases, Security doc, Structure doc, legal line | |
+| 1 | Sticky top bar | SAIZEN wordmark, version, theme toggle | Blurred, translucent, hairline bottom border |
+| 2 | Hero | 最善 lockup, wordmark, reading, tagline, lede, two CTAs, tech meta line | Typographic hero — no device mock, no screenshots in v1. The only place CJK appears on the page. |
+| 3 | Features | Browse, Search, Detail, Schedule, Player, Downloads, Accounts, Incognito, Appearance | Two-column rows with EN label rail (no CJK) |
+| 4 | Install | Honest table of the four distribution methods + version-numbering callout | Free Apple ID / ~7-day certs stated plainly |
+| 5 | Convergence | Feature chips spiral into the 最善 mark, once, on scroll into view | Closing moment before the footer |
+| 6 | Footer | Source, Releases, Security doc, Structure doc, legal line | |
+
+The playback-pipeline walkthrough and the security section were both removed outright (not just restyled) — judged to be more implementation/security detail than a public-facing site should volunteer. See `saizen-site-DESIGN.md` §11c for the full rationale.
 
 ---
 

@@ -7,7 +7,6 @@ export function Features() {
     <RevealSection>
       <div className="wrap">
         <div className="sec-head">
-          <p className="sec-jp">機能</p>
           <h2 className="sec-title">What is in the build</h2>
           <p className="sec-lede">Everything below is shipping in v1.4.2 and proven on a physical iPhone.</p>
         </div>
@@ -15,7 +14,6 @@ export function Features() {
           {features.map((feature) => (
             <GlassSurface as="article" className="row glass" key={feature.en}>
               <div className="row-label">
-                <span className="row-jp">{feature.jp}</span>
                 <span className="row-en">{feature.en}</span>
               </div>
               <div>

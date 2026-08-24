@@ -7,7 +7,6 @@ export function TopBar() {
     <GlassSurface as="header" className="top">
       <div className="wrap">
         <Link className="mark" href="#top">
-          <span className="kanji">最善</span>
           <span>SAIZEN</span>
         </Link>
         <span className="ver">v1.4.2</span>

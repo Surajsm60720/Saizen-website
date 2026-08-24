@@ -203,12 +203,6 @@ a {
   letter-spacing: 0.14em;
   font-size: 13px;
 }
-.mark .kanji {
-  font-family: var(--cjk);
-  font-size: 19px;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-}
 .ver {
   margin-left: auto;
   font-family: var(--mono);
@@ -435,13 +429,6 @@ a {
   gap: 12px;
   margin-bottom: clamp(34px, 6vh, 60px);
 }
-.sec-jp {
-  font-family: var(--cjk);
-  color: var(--accent);
-  font-size: clamp(17px, 2vw, 22px);
-  letter-spacing: 0.14em;
-  margin: 0;
-}
 .sec-title {
   font-family: var(--display);
   font-size: clamp(26px, 4.1vw, 46px);
@@ -453,58 +440,6 @@ a {
   margin: 6px 0 0;
   max-width: 60ch;
   color: var(--ink-soft);
-}
-
-/* ---------- pipeline (a real sequence, so it is numbered) ---------- */
-.pipe {
-  display: grid;
-  gap: 20px;
-}
-@media (min-width: 820px) {
-  .pipe {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-.step {
-  --glow-padding: 16px;
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  padding: clamp(24px, 3.4vw, 38px);
-}
-.step-n {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.step-n::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-.step h3 {
-  font-family: var(--display);
-  font-size: clamp(18px, 2.1vw, 23px);
-  margin: 0 0 10px;
-  line-height: 1.28;
-}
-.step p {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 15px;
-}
-.step code {
-  font-family: var(--mono);
-  font-size: 12.5px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
-  padding: 1px 5px;
-  border-radius: 2px;
 }
 
 /* ---------- feature rows ---------- */
@@ -543,13 +478,6 @@ a {
   display: flex;
   align-items: baseline;
   gap: 12px;
-}
-.row-jp {
-  font-family: var(--cjk);
-  color: var(--accent);
-  font-size: 16px;
-  letter-spacing: 0.12em;
-  white-space: nowrap;
 }
 .row-en {
   font-family: var(--mono);

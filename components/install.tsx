@@ -6,7 +6,6 @@ export function Install() {
     <RevealSection>
       <div className="wrap">
         <div className="sec-head">
-          <p className="sec-jp">導入</p>
           <h2 className="sec-title">Getting it onto a phone</h2>
           <p className="sec-lede">
             Saizen is a personal sideload project. There is no App Store listing and no TestFlight.
