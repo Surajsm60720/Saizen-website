@@ -3,6 +3,7 @@ import { Pipeline } from '@/components/pipeline';
 import { Features } from '@/components/features';
 import { Security } from '@/components/security';
 import { Install } from '@/components/install';
+import { Convergence } from '@/components/convergence';
 import { Footer } from '@/components/footer';
 
 export default function Home() {
@@ -14,6 +15,7 @@ export default function Home() {
         <Features />
         <Security />
         <Install />
+        <Convergence />
       </main>
       <Footer />
     </>

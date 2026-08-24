@@ -626,6 +626,74 @@ td strong {
   color: var(--ink);
 }
 
+/* ---------- convergence (every piece, one build) ----------
+   Fragments spiral inward from beyond the frame and collapse into the mark,
+   once, when the section scrolls into view — never on load, never a loop.
+   Canvas is the right tool for the ~10 unlabeled background points; the
+   fragment tags themselves are real DOM text (real feature chips), positioned
+   with an absolute translate() each frame — deliberately top:0;left:0, not
+   50%/50%, so the JS-computed absolute coordinate isn't double-offset. */
+.conv-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 520px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+}
+.conv-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.conv-frag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 5px 10px;
+  white-space: nowrap;
+  background: var(--bg);
+  pointer-events: none;
+}
+.conv-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.82);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.7, 0.3, 1), transform 0.6s cubic-bezier(0.2, 0.7, 0.3, 1);
+  pointer-events: none;
+}
+.conv-mark.in {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+.conv-mark .kanji {
+  font-family: var(--cjk);
+  color: var(--accent);
+  font-size: clamp(48px, 9vw, 84px);
+  line-height: 1;
+  margin: 0;
+}
+.conv-mark .word {
+  font-family: var(--display);
+  font-size: clamp(15px, 2vw, 20px);
+  letter-spacing: 0.06em;
+  margin: 8px 0 0;
+  color: var(--ink);
+}
+
 /* ---------- footer ---------- */
 .foot {
   border-top: 1px solid var(--rule);
