@@ -1,0 +1,147 @@
+export interface PipelineStep {
+  number: string;
+  title: string;
+  body: string;
+}
+
+export interface Feature {
+  jp: string;
+  en: string;
+  title: string;
+  body: string;
+  chips?: string[];
+}
+
+export interface SecurityItem {
+  jp: string;
+  en: string;
+  body: string;
+}
+
+export interface InstallMethod {
+  method: string;
+  paidAccount: string;
+  paidAccountLevel: 'yes' | 'no';
+  notes: string;
+}
+
+export const pipelineSteps: PipelineStep[] = [
+  {
+    number: '01',
+    title: 'Modules resolve the episode',
+    body: 'Sources you install under Settings → Modules run in a JS runtime and return stream candidates. Module scripts load over HTTPS only.',
+  },
+  {
+    number: '02',
+    title: 'Candidates rank to HLS or MP4',
+    body: 'Each candidate carries its URL and headers. Batch queueing uses resolveStreamsBatch, trying the last known-good module for that show first.',
+  },
+  {
+    number: '03',
+    title: 'A custom AVPlayer takes over',
+    body: 'Playback runs through native AVPlayer chrome. MobileVLCKit stays in the build as a probe fallback for containers AVFoundation will not take.',
+  },
+];
+
+export const features: Feature[] = [
+  {
+    jp: '閲覧',
+    en: 'Browse',
+    title: 'Home that fills in once you sign in',
+    body: 'Discover rails with a View more link into Search filters, continue watching, and list-backed shelves after AniList or MAL sign-in. Personalised rails paint from cache first, then refresh in the background.',
+    chips: ['Hero carousel', 'Prequels & sequels', 'Genre picks', 'Continue watching'],
+  },
+  {
+    jp: '検索',
+    en: 'Search',
+    title: 'Filter, not a detour',
+    body: 'Search by title, then narrow with the Filters sheet. Open an anime, come back, and the session is still there. The keyboard hides the tab bar instead of fighting it.',
+    chips: ['Genre', 'Year', 'Season', 'Format', 'Status', 'Sort', 'In my list'],
+  },
+  {
+    jp: '作品',
+    en: 'Detail',
+    title: 'The whole franchise, in order',
+    body: 'Character, VA and staff rails with their own pages. Relations laid out as a watch order rather than a flat list. Edit your list entry without leaving the page, and tap an OP or ED title to copy it.',
+    chips: ['Watch-order relations', 'Continue watching EP xx', 'OP/ED song names', 'Manga detail for relations'],
+  },
+  {
+    jp: '放送',
+    en: 'Schedule',
+    title: 'A week of airings in device-local time',
+    body: 'The Schedule tab shows what airs when, switchable between your list and the current season — no mental timezone maths.',
+  },
+  {
+    jp: '再生',
+    en: 'Player',
+    title: 'Built for how episodes are watched',
+    body: 'Custom AVPlayer chrome for CDN HLS and MP4. AniSkip marks openings and endings, then offers a Skip pill or skips them for you.',
+    chips: ['±10s / play / next', 'Double- and triple-tap seek', 'Speed & aspect', 'AniSkip OP/ED', 'Optional auto-skip'],
+  },
+  {
+    jp: '保存',
+    en: 'Downloads',
+    title: 'A queue that holds up',
+    body: 'Pause, resume and cancel stay responsive while native work runs off the bridge thread. HTTP downloads report speed and bytes; HLS reports percent rather than inventing a total. Clear cache sweeps orphaned and partial packs.',
+    chips: ['Batch Save', 'Lock-screen progress', 'Offline library playback'],
+  },
+  {
+    jp: '同期',
+    en: 'Accounts',
+    title: 'AniList and MyAnimeList, both ways',
+    body: 'Sign in once and your lists drive Home. Tokens live in the Keychain and nowhere else. Deleting an entry clears continue-watching without a restart.',
+  },
+  {
+    jp: '秘匿',
+    en: 'Incognito',
+    title: 'Watch without leaving a trail',
+    body: 'Flip Incognito on to pause list sync and Home continue. Session resume clears when you leave it. Downloads already on disk stay put.',
+  },
+  {
+    jp: '外観',
+    en: 'Appearance',
+    title: 'Chrome you can tune',
+    body: 'An icon-only frosted tab bar with drag-to-scrub selection across Home, Search, Schedule and More. Settings → Appearance controls the accent colour plus tab bar and top chrome transparency, with an optional Frosted blur.',
+    chips: ['Puritan + Quando type', 'Transparency slider', 'Frosted blur'],
+  },
+];
+
+export const securityItems: SecurityItem[] = [
+  {
+    jp: '鍵',
+    en: 'Keys',
+    body: 'Only public OAuth Client IDs go in the web env. The AniList Client Secret lives in a gitignored local Swift file, never in a NEXT_PUBLIC_* variable and never in the Settings UI. IPA packaging scans for secrets and refuses to produce a build if it finds one.',
+  },
+  {
+    jp: '通信',
+    en: 'Transport',
+    body: 'Module and extension scripts load over HTTPS only. OAuth redirect URIs are checked against a host allowlist, loopback streams are authenticated, the Keychain has a key allowlist, and Capacitor bridge logging is off in release.',
+  },
+];
+
+export const installMethods: InstallMethod[] = [
+  {
+    method: 'Xcode → Run',
+    paidAccount: 'Not needed',
+    paidAccountLevel: 'yes',
+    notes: 'Best for daily personal use. Certificate lasts about 7 days.',
+  },
+  {
+    method: 'Sideloadly / AltStore / Feather',
+    paidAccount: 'Not needed',
+    paidAccountLevel: 'yes',
+    notes: 'Free Apple ID, roughly 7-day certs, re-sign periodically.',
+  },
+  {
+    method: 'GitHub Release IPA',
+    paidAccount: 'Not needed to host',
+    paidAccountLevel: 'yes',
+    notes: 'Installing still needs a sideload tool. Each installer trusts the certificate on their own device.',
+  },
+  {
+    method: 'App Store / TestFlight',
+    paidAccount: 'Required',
+    paidAccountLevel: 'no',
+    notes: 'Not available on a free account, and not a goal for this project.',
+  },
+];
