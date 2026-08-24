@@ -250,10 +250,15 @@ a {
   display: block;
 }
 
-/* ---------- the blade wipe ---------- */
+/* ---------- the blade wipe ----------
+   inset controls how much this overlay overhangs the viewport, which is
+   needed so the diagonal band clears the corners at an 18deg tilt — but
+   -30vh/-70vw made the composited layer ~3.8x the viewport's area, real GPU
+   work every frame for the full animation. -15vh/-25vw is still safe margin
+   at this tilt angle and roughly halves that. */
 .slashfx {
   position: fixed;
-  inset: -30vh -70vw;
+  inset: -15vh -25vw;
   z-index: 200;
   pointer-events: none;
   opacity: 0;
