@@ -11,8 +11,13 @@ export function Features() {
           <p className="sec-lede">Everything below is shipping in v1.4.2 and proven on a physical iPhone.</p>
         </div>
         <div className="rows rows--cards">
-          {features.map((feature) => (
-            <GlassSurface as="article" className="row glass" key={feature.en}>
+          {features.map((feature, index) => (
+            <GlassSurface
+              as="article"
+              className="row glass"
+              key={feature.en}
+              style={{ transitionDelay: `${index * 55}ms` }}
+            >
               <div className="row-label">
                 <span className="row-en">{feature.en}</span>
               </div>
