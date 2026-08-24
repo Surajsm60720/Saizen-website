@@ -173,3 +173,27 @@ Specific traps to avoid:
 - There is no App Store build, no TestFlight, no paid-account distribution path.
 
 When the app ships a new feature, update the site copy from the README changelog, never from planning documents.
+
+---
+
+## 11. Amendment — glass material and the convergence section
+
+Two additions layered on top of the rules above, added after the MVP shipped. Both are deliberate, scoped exceptions — everything in §1–10 still governs the rest of the page.
+
+### 11a. Glass material (top bar, pipeline/feature cards, hero buttons)
+
+The top bar, the pipeline steps, the feature rows, and the two hero CTAs use a "glass" treatment: a flat translucent fill (`--glass-bg`, ink-tinted relative to the theme's own background — never literal white paint on white paper) plus a directional edge-light glow, ported from React Bits' `BorderGlow` component (its edge-proximity and cursor-angle math, unmodified; its mesh-gradient `colors` prop dropped entirely for plain graded white — real light doesn't change hue with the theme).
+
+This bends two rules from §3/§5/§7 on purpose:
+- **"No third hue, no gradients as decoration"** — the edge-light is a second gradient beyond the blade's falloff. It stays white in both themes rather than introducing a hue, which is the compromise that made this acceptable.
+- **Corner radius** — pipeline/feature cards round to 16px and hero buttons to a 24px pill, breaking from the site's otherwise near-flat 2px radius everywhere else (buttons, toggle, chips, table wrapper). This is deliberate, not drift: rounded, continuous-corner shapes are specifically what reads as "iOS 26 Liquid Glass," which is the thing this material exists to quote. Nothing outside this material adopts the rounder radius.
+
+The glow itself: an `--edge-proximity` value (0 at a surface's center, 100 at its boundary) gates opacity, and a conic-gradient mask swept to `--cursor-angle` keeps the glow lit only on whichever edge the cursor is nearest — a beam that travels the border as the cursor moves, covering roughly a tenth of the perimeter at once, never the interior. Implementation: `lib/edge-glow.ts` (the hook), `components/glass-surface.tsx` + `components/edge-light.tsx` (the DOM), `.glass`/`.edge-light` in `app/globals.css` (the visuals). Respects `prefers-reduced-motion` (the glow is hidden outright, not just slowed).
+
+Security's rows and the install table deliberately stay on the original flush hairline-list treatment — the glass material's scope is top bar + pipeline + features + hero buttons only.
+
+### 11b. Convergence section
+
+A new section, `統合` ("integration"), sits at the end of the page, after Install and before the footer. Every labeled fragment tag is real chip text flattened straight from `lib/content.ts` (`features.flatMap(f => f.chips ?? [])`) — not a hand-picked or placeholder list, so it stays in sync automatically as features change. A small number (10) of dim, unlabeled canvas points add background texture only; the "many things coming together" read is carried by the real content, not by particle count.
+
+The sequence plays once, triggered by `IntersectionObserver` when the section scrolls into view — never on page load, never a loop, matching the discipline already established for scroll reveal elsewhere on the page. Canvas is used for the point swarm and the ink-burst finale (hundreds of DOM nodes would be the wrong tool); the labeled tags themselves are real, accessible-if-unhidden DOM text, not canvas-drawn. Disabled under `prefers-reduced-motion` (jumps straight to the resolved mark).
