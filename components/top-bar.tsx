@@ -7,7 +7,7 @@ export function TopBar() {
     <GlassSurface as="header" className="top">
       <div className="wrap">
         <Link className="mark" href="#top">
-          <span>SAIZEN</span>
+          Saizen
         </Link>
         <span className="ver">v1.4.2</span>
         <ThemeToggle />

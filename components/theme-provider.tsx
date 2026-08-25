@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { Theme } from '@/lib/theme';
 import { THEME_STORAGE_KEY } from '@/lib/theme';
 
@@ -17,9 +18,34 @@ export function useTheme(): ThemeContextValue {
   return ctx;
 }
 
+/**
+ * The old approach was a decorative diagonal gradient div sweeping OVER the
+ * page while the actual theme flipped instantly underneath it, hidden by
+ * the overlay — a trick, not a real reveal, and it read like one ("a stick
+ * moving"). This uses the browser's real View Transitions API instead:
+ * `startViewTransition` takes an actual "before" screenshot, runs the
+ * callback (which flips the theme), takes an actual "after" screenshot, and
+ * composites between them — real GPU-side old/new snapshots, not a hidden
+ * instant swap. `theme-wipe-reveal` in globals.css clips the "after"
+ * snapshot with an animated diagonal clip-path, so the new theme is
+ * genuinely, progressively visible left-of-the-line as it sweeps, not
+ * revealed all at once behind a decoration.
+ *
+ * Graceful, spec-required fallback: browsers without support (feature-
+ * detected, not sniffed) just get the instant swap, which — since every
+ * themed property already carries its own short CSS transition (body
+ * background/color, .btn colors, etc.) — still crossfades on its own, just
+ * without the wipe shape. That's the "generic dark/light animation" this
+ * degrades to if the native API isn't there, not a broken/static jump.
+ */
+type StartViewTransition = (callback: () => void) => { finished: Promise<void> };
+
+function getStartViewTransition(): StartViewTransition | undefined {
+  return (document as unknown as { startViewTransition?: StartViewTransition }).startViewTransition;
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
-  const overlayRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -38,32 +64,32 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   function toggleTheme() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const overlay = overlayRef.current;
+    const start = getStartViewTransition();
 
-    if (reduce || !overlay) {
+    if (reduce || !start) {
       applyTheme(next);
       return;
     }
     if (busyRef.current) return;
     busyRef.current = true;
 
-    overlay.classList.remove('cut');
-    void overlay.offsetWidth;
-    overlay.classList.add('cut');
-
-    // Matches the 900ms .slashfx.cut animation in globals.css — swap at ~40%
-    // of total duration (360ms), clear busy shortly after it finishes (920ms).
-    window.setTimeout(() => applyTheme(next), 360);
-    window.setTimeout(() => {
-      overlay.classList.remove('cut');
+    try {
+      // flushSync forces React to commit the theme change synchronously
+      // inside the callback, so the API's "after" snapshot is guaranteed to
+      // capture the new theme rather than racing React's normal async batch.
+      const transition = start(() => {
+        flushSync(() => applyTheme(next));
+      });
+      transition.finished.finally(() => {
+        busyRef.current = false;
+      });
+    } catch {
+      // A native API misbehaving is still not a reason to strand the
+      // toggle — fall back to the plain instant swap.
+      applyTheme(next);
       busyRef.current = false;
-    }, 920);
+    }
   }
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div ref={overlayRef} className="slashfx" aria-hidden="true" />
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }

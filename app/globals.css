@@ -194,14 +194,21 @@ a {
   gap: 16px;
   height: 60px;
 }
+/* Matches the real app header exactly — apps/web/src/app/globals.css'
+   `.text-brand` utility (Quando, 700, tight negative tracking, 18px→20px at
+   its 640px breakpoint; here as a fluid clamp() to match the site's own
+   convention instead of a discrete jump). Was previously wide-tracked mono
+   uppercase, which is a site-only invention with no basis in the app. */
 .mark {
   display: flex;
   align-items: baseline;
   gap: 10px;
   text-decoration: none;
+  font-family: var(--display);
+  font-size: clamp(18px, 1.1vw + 16px, 20px);
   font-weight: 700;
-  letter-spacing: 0.14em;
-  font-size: 13px;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .ver {
   margin-left: auto;
@@ -211,82 +218,75 @@ a {
   letter-spacing: 0.06em;
 }
 
+/* Icon-only — no border box, no text label. The blade mark is the entire
+   visual; it's also the exact motif the click triggers (the theme-transition
+   sweep), so the control literally previews its own action. 44x44 hit area
+   kept via padding for touch-target compliance even though the visible mark
+   is small. */
 .toggle {
   appearance: none;
-  border: 1px solid var(--rule);
+  border: none;
   background: transparent;
-  color: var(--ink);
-  min-width: 44px;
-  min-height: 36px;
-  padding: 0 12px;
-  border-radius: 2px;
+  color: var(--ink-faint);
+  width: 44px;
+  height: 44px;
+  padding: 0;
   cursor: pointer;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-}
-.toggle {
-  transition: border-color 0.14s, color 0.14s, transform 0.1s ease;
+  justify-content: center;
+  transition: color 0.14s, transform 0.1s ease;
 }
 .toggle:hover {
-  border-color: var(--accent);
   color: var(--accent);
 }
 .toggle:active {
-  transform: scale(0.96);
+  transform: scale(0.88);
 }
 .toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+  border-radius: 2px;
 }
 .toggle .blade {
-  width: 13px;
-  height: 1.5px;
+  width: 18px;
+  height: 2px;
   background: currentColor;
   transform: rotate(var(--slash));
   display: block;
 }
 
-/* ---------- the blade wipe ----------
-   inset controls how much this overlay overhangs the viewport, which is
-   needed so the diagonal band clears the corners at an 18deg tilt — but
-   -30vh/-70vw made the composited layer ~3.8x the viewport's area, real GPU
-   work every frame for the full animation. -15vh/-25vw is still safe margin
-   at this tilt angle and roughly halves that. */
-.slashfx {
-  position: fixed;
-  inset: -15vh -25vw;
-  z-index: 200;
-  pointer-events: none;
-  opacity: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0 45.6%,
-    color-mix(in srgb, var(--accent) 55%, transparent) 45.6% 48.4%,
-    var(--accent) 48.4% 50%,
-    transparent 50% 100%
-  );
-  transform: translate3d(-125%, 0, 0) rotate(var(--slash));
-  will-change: transform, opacity;
+/* ---------- the blade wipe (View Transitions) ----------
+   ::view-transition-old/new(root) are real before/after page snapshots the
+   browser captures around theme-provider.tsx's startViewTransition call —
+   not a decorative div sweeping over a hidden instant swap. Clipping the
+   "new" snapshot with an animated diagonal polygon means the new theme is
+   genuinely, progressively visible left of the line as it travels, not
+   revealed all at once behind cover.
+
+   Polygon anatomy: top-left/bottom-left corners stay pinned far off-screen
+   (-50%) for the whole animation — they're always inside the clip, so the
+   region behind them (everything already swept past) stays revealed. Only
+   the top-right/bottom-right pair moves, sweeping the diagonal leading edge
+   itself from off-screen-left to off-screen-right; the 14-point gap between
+   the top and bottom x-values is what tilts that edge instead of leaving it
+   vertical. Values are percentages of the snapshot's own box, so this holds
+   up across viewport sizes without per-breakpoint tuning. */
+::view-transition-group(root) {
+  animation-duration: 1.2s;
 }
-.slashfx.cut {
-  /* Slower (900ms, was 620ms) and a gentler curve — cubic-bezier(.72,0,.18,1)
-     holds still at both ends and snaps through the middle, which reads as a
-     flash, not a glide. cubic-bezier(.22,1,.36,1) is a smooth, continuous
-     ease-out the whole way through. */
-  animation: cut 900ms cubic-bezier(0.22, 1, 0.36, 1);
+::view-transition-old(root) {
+  animation: none;
 }
-@keyframes cut {
-  0% {
-    opacity: 1;
-    transform: translate3d(-125%, 0, 0) rotate(var(--slash));
+::view-transition-new(root) {
+  animation: theme-wipe-reveal 1.2s cubic-bezier(0.22, 0.7, 0.3, 1) forwards;
+}
+@keyframes theme-wipe-reveal {
+  from {
+    clip-path: polygon(-50% -20%, -16% -20%, -30% 120%, -50% 120%);
   }
-  100% {
-    opacity: 1;
-    transform: translate3d(125%, 0, 0) rotate(var(--slash));
+  to {
+    clip-path: polygon(-50% -20%, 144% -20%, 130% 120%, -50% 120%);
   }
 }
 
@@ -294,6 +294,86 @@ a {
 .hero {
   padding: clamp(56px, 11vh, 120px) 0 clamp(48px, 9vh, 96px);
   position: relative;
+}
+.hero .wrap {
+  position: relative;
+}
+/* Real content gets its own stacking context above the watermark. Without
+   this, .hero-mark (position:absolute) would paint on top of the normal-flow
+   text regardless of DOM order — positioned elements always paint after
+   static ones within the same stacking context. */
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+/* Fills the empty right side of the hero at wide viewports — purely
+   typographic (no device mock/screenshot, consistent with the hero being
+   typographic-only), and reuses the exact mark already used as the page's
+   own brand kanji rather than introducing new imagery. Hidden below 900px:
+   there's no spare width for it once the text column needs the space, and
+   it would just crowd against the tagline. */
+.hero-mark {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  font-family: var(--cjk);
+  color: var(--accent);
+  font-size: clamp(160px, 22vw, 340px);
+  line-height: 1;
+  opacity: 0.06;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+@media (min-width: 900px) {
+  .hero-mark {
+    display: block;
+  }
+}
+/* Load-time entrance — the hero is always in view on load (nothing to
+   scroll-trigger), so this runs once on paint via animation-delay, not
+   IntersectionObserver. Mask-reveal "pop", not fade/blur: each unit sits
+   behind an invisible line (.mask, overflow:hidden), starts pushed fully
+   below it, and takes a straight shot up to its resting position — no
+   overshoot, no settle-back. The "pop" read comes from speed (fast start,
+   gentle stop) and the hard mask edge, not from bouncing past the line.
+
+   Applied to the actual content elements (each button individually via its
+   own .mask/.pop wrapper, never to .lockup/.cta themselves) — those are
+   plain flex divs with no explicit width, so as block-level boxes they
+   stretch full width even though their children don't; a `filter`-based
+   effect on a full-width wrapper containing a glass button warps the
+   button's mix-blend-mode glow across that whole width (learned the hard
+   way from the previous blur-based version of this animation). The mask
+   technique doesn't touch `filter` at all, so that failure mode doesn't
+   apply here, but the element-not-wrapper targeting is kept anyway since
+   it's also just more correct staggering. */
+.mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+}
+.mask.block {
+  display: block;
+}
+.pop {
+  display: inline-block;
+  transform: translateY(115%);
+  animation: pop-in 0.85s cubic-bezier(0.22, 0.85, 0.32, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes pop-in {
+  from {
+    transform: translateY(115%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.hero .tagline .accent {
+  color: var(--accent);
 }
 .eyebrow {
   font-family: var(--mono);
@@ -343,16 +423,21 @@ a {
   margin: 10px 0 0;
 }
 .tagline {
+  /* flex + gap for spacing between the per-word .mask elements, not source
+     whitespace between the tags (JSX renders siblings with none) or a
+     trailing space inside each word's text (inline-block trailing
+     whitespace rendering is inconsistent across browsers — Safari in
+     particular can collapse it to nothing, which is what ran every word
+     together with no gaps at all). Wraps like a paragraph via flex-wrap. */
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.26em;
+  row-gap: 0.1em;
   font-family: var(--display);
   font-size: clamp(21px, 2.9vw, 34px);
   line-height: 1.34;
   margin: clamp(30px, 5vh, 50px) 0 0;
   max-width: 19ch;
-  text-wrap: balance;
-}
-.tagline em {
-  font-style: normal;
-  color: var(--accent);
 }
 .lede {
   margin: 20px 0 0;
@@ -609,13 +694,14 @@ td strong {
    with an absolute translate() each frame — deliberately top:0;left:0, not
    50%/50%, so the JS-computed absolute coordinate isn't double-offset. */
 .conv-stage {
+  /* full-bleed, no .wrap constraint — the section itself has no horizontal
+     padding, so this runs edge-to-edge. Height is viewport-relative instead
+     of an aspect-ratio + max-height cap, so it actually gets more room
+     rather than being boxed into a fixed card. */
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 520px;
+  height: clamp(420px, 80vh, 900px);
   overflow: hidden;
-  border: 1px solid var(--rule);
-  border-radius: 16px;
 }
 .conv-canvas {
   position: absolute;

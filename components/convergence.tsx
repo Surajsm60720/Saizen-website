@@ -291,20 +291,11 @@ export function Convergence() {
 
   return (
     <section className="sec conv">
-      <div className="wrap">
-        <div className="sec-head">
-          <h2 className="sec-title">Every piece, one build</h2>
-          <p className="sec-lede">
-            Modules, player, downloads, accounts, security — everything above compiles into one binary you sideload
-            once.
-          </p>
-        </div>
-        <div className="conv-stage" ref={stageRef}>
-          <canvas className="conv-canvas" ref={canvasRef} aria-hidden="true" />
-          <div className="conv-mark" ref={markRef} aria-hidden="true">
-            <p className="kanji">最善</p>
-            <p className="word">SAIZEN</p>
-          </div>
+      <div className="conv-stage" ref={stageRef}>
+        <canvas className="conv-canvas" ref={canvasRef} aria-hidden="true" />
+        <div className="conv-mark" ref={markRef} aria-hidden="true">
+          <p className="kanji">最善</p>
+          <p className="word">SAIZEN</p>
         </div>
       </div>
     </section>
