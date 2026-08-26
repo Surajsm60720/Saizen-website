@@ -518,24 +518,6 @@ a {
      skew rather than a surface tilting in 3D. */
   perspective: 1400px;
 }
-.phone-rig {
-  animation: phone-float 6s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes phone-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .phone-rig {
-    animation: none;
-  }
-}
 .phone {
   --w: 272px;
   --h: 558px;
@@ -637,22 +619,83 @@ a {
   background: radial-gradient(circle at 35% 35%, #3a5a8a 0%, #0b1220 60%, #000 100%);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
+/* Launch splash — the phone's resting state in the hero. Screen starts
+   dark, the kanji mark blooms in once with a glow that breathes behind it
+   twice, then settles: reads as the app waking up, not a static logo
+   card. Triggered by the same .is-shown crossfade the per-feature screens
+   use once docked in Features (PhoneScrolly toggles it via activeIndex),
+   so this fires again if the phone is ever back at -1, not just on load. */
 .phone__placeholder {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.28);
   opacity: 0;
   transition: opacity 0.35s ease;
 }
 .phone__placeholder.is-shown {
   opacity: 1;
+}
+.phone__glow {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 38%, transparent), transparent 72%);
+  filter: blur(10px);
+  opacity: 0;
+  transform: scale(0.7);
+}
+.phone__placeholder.is-shown .phone__glow {
+  animation: splash-glow 2.6s cubic-bezier(0.22, 0.85, 0.32, 1) both;
+}
+@keyframes splash-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  35% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+  60% {
+    opacity: 0.55;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
+.phone__mark {
+  position: relative;
+  font-family: var(--cjk);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--accent);
+  opacity: 0;
+  transform: scale(0.82);
+}
+.phone__placeholder.is-shown .phone__mark {
+  animation: splash-mark 1s cubic-bezier(0.22, 0.85, 0.32, 1) 0.25s both;
+}
+@keyframes splash-mark {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone__glow,
+  .phone__mark {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }
 .phone__feature {
   position: absolute;
@@ -1002,7 +1045,7 @@ a {
   transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
   transition-delay: var(--d, 0ms);
 }
-.rv.in .row-seam {
+.row.in .row-seam {
   transform: scaleX(1);
 }
 .blade-tick {
@@ -1027,7 +1070,7 @@ a {
   box-shadow: 0 0 3px var(--accent), 0 0 12px 1px color-mix(in srgb, var(--accent) 65%, transparent);
   transform: rotate(-18deg);
 }
-.rv.in .blade-tick {
+.row.in .blade-tick {
   animation: tick-run 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   animation-delay: var(--d, 0ms);
 }
@@ -1045,13 +1088,15 @@ a {
   }
 }
 /* text pop, gated on scroll (unlike the hero's .pop, which just runs on
-   mount): paused until .rv.in, same delay/duration as the cut above so
-   both move together rather than one after the other */
+   mount): paused until this row's own .in (RevealRow observes each row
+   individually, not the section as a whole — a row only cuts/pops once
+   IT scrolls into view, not all nine together when Features appears),
+   same delay/duration as the cut above so both move together */
 .pop--gated {
   animation-duration: 0.9s;
   animation-play-state: paused;
 }
-.rv.in .pop--gated {
+.row.in .pop--gated {
   animation-play-state: running;
 }
 .row-label {

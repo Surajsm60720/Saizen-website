@@ -1,10 +1,6 @@
-import type { CSSProperties } from 'react';
 import { RevealSection } from './reveal-section';
+import { RevealRow } from './reveal-row';
 import { features } from '@/lib/content';
-
-function rowDelay(index: number): CSSProperties {
-  return { '--d': `${index * 90}ms` } as CSSProperties;
-}
 
 export function Features() {
   return (
@@ -16,58 +12,47 @@ export function Features() {
         </div>
         <div className="features-grid">
         <div className="rows rows--ledger">
-          {features.map((feature, index) => {
-            const d = rowDelay(index);
-            return (
-              <article className="row" key={feature.en} style={d}>
-                <span className="row-seam" style={d} aria-hidden="true" />
-                <span className="blade-tick" style={d} aria-hidden="true" />
-                <div className="row-label">
-                  <span className="row-index">
-                    <span className="mask">
-                      <span className="pop pop--gated" style={d}>{`0${index + 1}`}</span>
-                    </span>
+          {features.map((feature, index) => (
+            <RevealRow className="row" key={feature.en}>
+              <span className="row-seam" aria-hidden="true" />
+              <span className="blade-tick" aria-hidden="true" />
+              <div className="row-label">
+                <span className="row-index">
+                  <span className="mask">
+                    <span className="pop pop--gated">{`0${index + 1}`}</span>
                   </span>
-                  <span className="row-en">
-                    <span className="mask">
-                      <span className="pop pop--gated" style={d}>
-                        {feature.en}
-                      </span>
-                    </span>
+                </span>
+                <span className="row-en">
+                  <span className="mask">
+                    <span className="pop pop--gated">{feature.en}</span>
                   </span>
-                </div>
-                <div>
-                  <h3>
-                    <span className="mask block">
-                      <span className="pop pop--gated" style={d}>
-                        {feature.title}
-                      </span>
-                    </span>
-                  </h3>
-                  <p>
-                    <span className="mask block">
-                      <span className="pop pop--gated" style={d}>
-                        {feature.body}
-                      </span>
-                    </span>
-                  </p>
-                  {feature.chips && (
-                    <ul className="chips">
-                      {feature.chips.map((chip) => (
-                        <li key={chip}>
-                          <span className="mask">
-                            <span className="pop pop--gated" style={d}>
-                              {chip}
-                            </span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+                </span>
+              </div>
+              <div>
+                <h3>
+                  <span className="mask block">
+                    <span className="pop pop--gated">{feature.title}</span>
+                  </span>
+                </h3>
+                <p>
+                  <span className="mask block">
+                    <span className="pop pop--gated">{feature.body}</span>
+                  </span>
+                </p>
+                {feature.chips && (
+                  <ul className="chips">
+                    {feature.chips.map((chip) => (
+                      <li key={chip}>
+                        <span className="mask">
+                          <span className="pop pop--gated">{chip}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </RevealRow>
+          ))}
         </div>
         {/* Reserves the phone's docked footprint while it's pinned here —
             same anchor-rect pattern as the hero slot, read by PhoneScrolly. */}
