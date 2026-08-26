@@ -14,6 +14,10 @@ export default function Home() {
             over — see PhoneScrolly. Empty on purpose. */}
         <div id="phone-transition-zone" aria-hidden="true" />
         <Features />
+        {/* Scroll distance the closing-tagline stage plays out over — the
+            phone re-centres once more and shows the closing line before
+            fading out for good. Empty on purpose, see PhoneScrolly. */}
+        <div id="phone-tagline-zone" aria-hidden="true" />
         <Install />
         <Convergence />
       </main>
