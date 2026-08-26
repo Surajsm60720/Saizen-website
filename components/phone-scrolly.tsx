@@ -189,7 +189,7 @@ export function PhoneScrolly() {
     // its own position is already animating, and reacting to the whole
     // window's pointer position at a tiny docked scale would just look
     // jittery rather than responsive.
-    const MAX_TILT = 7;
+    const MAX_TILT = 11;
     function onPointerMove(e: PointerEvent) {
       if (stageRef.current !== 'hero') return;
       const r = phone!.getBoundingClientRect();

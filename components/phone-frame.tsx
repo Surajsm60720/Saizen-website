@@ -26,6 +26,12 @@ export const PhoneFrame = forwardRef<HTMLDivElement, PhoneFrameProps>(function P
   return (
     <div className="phone-rig">
       <div className="phone" ref={ref}>
+        {/* Side faces give the body real thickness under the tilt — plain
+            rotateY(90deg) slivers, siblings of the (clipped) screen rather
+            than children of it, so they can't collide with the
+            overflow:hidden + preserve-3d combo that caused the leak. */}
+        <span className="phone__edge phone__edge--right" aria-hidden="true" />
+        <span className="phone__edge phone__edge--left" aria-hidden="true" />
         <span className="phone__btn phone__btn--action" aria-hidden="true" />
         <span className="phone__btn phone__btn--vol-up" aria-hidden="true" />
         <span className="phone__btn phone__btn--vol-down" aria-hidden="true" />
@@ -41,9 +47,11 @@ export const PhoneFrame = forwardRef<HTMLDivElement, PhoneFrameProps>(function P
               <span className="tag">{screen.label}</span>
             </div>
           ))}
-          <span className="phone__island" aria-hidden="true" />
           <span className="phone__sheen" aria-hidden="true" />
         </div>
+        {/* Floats a few px above the glass, outside the clipped screen box
+            for the same reason as the edges above. */}
+        <span className="phone__island" aria-hidden="true" />
       </div>
     </div>
   );
