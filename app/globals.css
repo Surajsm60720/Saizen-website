@@ -256,6 +256,118 @@ a {
   display: block;
 }
 
+/* ---------- liquid-glass theme switcher (experimental) ----------
+   Test build: the SVG feImage/feGaussianBlur/feDisplacementMap filter
+   recipe from the pasted "Apple liquid glass switcher" component, kept
+   as-is per request, wired to the real 3-way (light/dark/system)
+   preference instead of its original 3-way (light/dark/dim). Fit is
+   secondary here — the point is seeing the actual filter render on the
+   real toggle, not a redesign. */
+.ls-switcher {
+  position: relative;
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--glass-bg);
+  backdrop-filter: url(#ls-switcher);
+  -webkit-backdrop-filter: blur(2px);
+}
+.ls-switcher__legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.ls-switcher__option {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  cursor: pointer;
+  --c: var(--ink-faint);
+}
+.ls-switcher__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ls-switcher__input:checked ~ .ls-switcher__icon {
+  --c: var(--accent);
+}
+.ls-switcher__icon {
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+.ls-switcher__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: var(--glass-shadow);
+  transform: translateX(calc(var(--i, 0) * 32px));
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: url(#ls-toggler) blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  z-index: 0;
+  pointer-events: none;
+  animation-duration: 0.4s;
+  animation-timing-function: ease;
+}
+.ls-switcher__filter {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+@keyframes ls-scale-1 {
+  0% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1.1 1;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+@keyframes ls-scale-2 {
+  0% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1.2 1;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+@keyframes ls-scale-3 {
+  0% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 1.1 1;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
 /* ---------- the blade wipe (View Transitions) ----------
    ::view-transition-old/new(root) are real before/after page snapshots the
    browser captures around theme-provider.tsx's startViewTransition call —
@@ -290,6 +402,60 @@ a {
   }
 }
 
+/* A visible glowing edge riding the wipe, same -18deg the toggle icon, the
+   hero mark and the features-ledger cut all already use. The wipe above is
+   real and correct on its own (an actual progressive reveal, not a cover
+   trick) but has no visible line — this adds one back without regressing
+   to the old "decorative div hides an instant swap" approach: it's a
+   Popover (see theme-provider.tsx), which is the one thing that can paint
+   above the View Transition's own top-layer snapshots, running a plain,
+   independent CSS animation timed to match theme-wipe-reveal exactly. */
+.theme-blade {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2147483647;
+}
+.theme-blade__line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 230vw;
+  height: 3px;
+  margin-left: -115vw;
+  margin-top: -1.5px;
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--accent), 0 0 20px 2px color-mix(in srgb, var(--accent) 65%, transparent);
+  transform: rotate(-18deg) translateX(-62%);
+  opacity: 0;
+}
+.theme-blade.active .theme-blade__line {
+  animation: theme-blade-move 1.2s cubic-bezier(0.22, 0.7, 0.3, 1) forwards;
+}
+@keyframes theme-blade-move {
+  0% {
+    opacity: 1;
+    transform: rotate(-18deg) translateX(-62%);
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(-18deg) translateX(115%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-blade__line {
+    display: none;
+  }
+}
+
 /* ---------- hero ---------- */
 .hero {
   padding: clamp(56px, 11vh, 120px) 0 clamp(48px, 9vh, 96px);
@@ -298,39 +464,217 @@ a {
 .hero .wrap {
   position: relative;
 }
-/* Real content gets its own stacking context above the watermark. Without
-   this, .hero-mark (position:absolute) would paint on top of the normal-flow
-   text regardless of DOM order — positioned elements always paint after
-   static ones within the same stacking context. */
 .hero-content {
   position: relative;
   z-index: 1;
 }
-/* Fills the empty right side of the hero at wide viewports — purely
-   typographic (no device mock/screenshot, consistent with the hero being
-   typographic-only), and reuses the exact mark already used as the page's
-   own brand kanji rather than introducing new imagery. Hidden below 900px:
-   there's no spare width for it once the text column needs the space, and
-   it would just crowd against the tagline. */
-.hero-mark {
-  display: none;
-  position: absolute;
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-  font-family: var(--cjk);
-  color: var(--accent);
-  font-size: clamp(160px, 22vw, 340px);
-  line-height: 1;
-  opacity: 0.06;
-  pointer-events: none;
-  user-select: none;
-  z-index: 0;
+/* Two-column at wide viewports: text left, device scaffold right. Single
+   column (frame hidden) below 900px — same cutoff the old watermark used,
+   for the same reason: no spare width once the text column needs it. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
 }
 @media (min-width: 900px) {
-  .hero-mark {
-    display: block;
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   }
+}
+.hero-device {
+  display: none;
+  justify-content: center;
+}
+@media (min-width: 900px) {
+  .hero-device {
+    display: flex;
+    width: 272px;
+    height: 558px;
+    margin: 0 auto;
+  }
+}
+
+/* ================= realistic phone (PhoneScrolly / PhoneFrame) =================
+   Pure CSS, no PNG: layered gradients fake a titanium bezel + bevel, a
+   radial-gradient fakes the dynamic island's camera glint, a screen-blend
+   diagonal fakes glass sheen. Frame stays a neutral titanium in both
+   themes (real hardware doesn't reskin); the glow underneath picks up the
+   live --accent so it still reads as this site. Ported from the artifact,
+   unchanged. */
+.phone-fly {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 272px;
+  height: 558px;
+  transform-origin: top left;
+  will-change: transform, opacity;
+  pointer-events: none;
+  z-index: 15;
+  opacity: 0;
+  /* perspective for .phone's own rotateX/rotateY tilt below — without it,
+     a rotated flat element has no vanishing point and reads as a plain
+     skew rather than a surface tilting in 3D. */
+  perspective: 1400px;
+}
+.phone-rig {
+  animation: phone-float 6s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes phone-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-rig {
+    animation: none;
+  }
+}
+.phone {
+  --w: 272px;
+  --h: 558px;
+  --bezel: 12px;
+  --radius: 54px;
+  --rx: 0deg;
+  --ry: 0deg;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  border-radius: var(--radius);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.25s cubic-bezier(0.22, 0.85, 0.32, 1);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 14%),
+    linear-gradient(20deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 30%),
+    radial-gradient(120% 90% at 30% 0%, #5a5a5e 0%, #3d3d40 32%, #202022 62%, #08080a 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), inset 0 1.5px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.6), 0 40px 70px -25px rgba(0, 0, 0, 0.55), 0 10px 24px -12px rgba(0, 0, 0, 0.45);
+  padding: var(--bezel);
+}
+.phone::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -8%;
+  height: 36px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 32%, transparent), transparent 72%);
+  filter: blur(2px);
+  z-index: -1;
+}
+.phone__screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--radius) - var(--bezel));
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 22%),
+    linear-gradient(135deg, #141416 0%, #0a0a0b 55%, #000 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.9);
+}
+.phone__sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 18%, rgba(255, 255, 255, 0) 38%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.phone__island {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34%;
+  height: 28px;
+  border-radius: 16px;
+  background: radial-gradient(120% 160% at 30% 20%, #232326 0%, #000 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 3px 6px rgba(0, 0, 0, 0.6);
+  z-index: 3;
+}
+.phone__island::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3a5a8a 0%, #0b1220 60%, #000 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.phone__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.phone__placeholder.is-shown {
+  opacity: 1;
+}
+.phone__feature {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--fc, var(--accent)) 22%, #0a0a0b);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.phone__feature.is-shown {
+  opacity: 1;
+}
+.phone__feature .tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+}
+.phone__btn {
+  position: absolute;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #4a4a4d, #1c1c1e);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.phone__btn--power {
+  right: -3px;
+  top: 150px;
+  width: 4px;
+  height: 60px;
+}
+.phone__btn--vol-up {
+  left: -3px;
+  top: 120px;
+  width: 4px;
+  height: 36px;
+}
+.phone__btn--vol-down {
+  left: -3px;
+  top: 164px;
+  width: 4px;
+  height: 36px;
+}
+.phone__btn--action {
+  left: -3px;
+  top: 88px;
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #1c1c1e), #1c1c1e);
 }
 /* Load-time entrance — the hero is always in view on load (nothing to
    scroll-trigger), so this runs once on paint via animation-delay, not
@@ -471,13 +815,22 @@ a {
   text-transform: uppercase;
   border: none;
   transition: transform 0.14s ease, background-color 0.14s, color 0.14s;
+  /* liquid-glass (experimental): same feImage/feGaussianBlur/feDisplacementMap
+     filter tested in the buttons artifact, reused by id — TopBar's
+     ThemeSwitcher is mounted on every page and already defines #ls-toggler,
+     so this just references it rather than duplicating the filter markup. */
+  backdrop-filter: url(#ls-toggler) blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 .btn .label {
   position: relative;
   z-index: 1;
 }
 .btn-solid {
-  background: color-mix(in srgb, var(--accent) 72%, var(--glass-bg));
+  /* kept as the same solid accent red throughout — not diluted through
+     --glass-bg the way this used to blend, so the red stays the one true
+     accent shade everywhere it appears, not a slightly duller mix here */
+  background: color-mix(in srgb, var(--accent) 82%, transparent);
   color: var(--bg);
 }
 .btn-ghost {
@@ -554,50 +907,142 @@ a {
     grid-template-columns: minmax(190px, 258px) minmax(0, 1fr);
   }
 }
-/* Features' rows specifically become glass cards (approved scope: feature
-   cards + buttons + top bar). Scoped separately from the plain .rows/.row
-   above so future reuse of that base pattern doesn't collide with this. */
-.rows--cards {
+/* Scroll distance the hero-to-features phone takeover plays out over
+   (PhoneScrolly reads this element's own rect to compute progress) —
+   empty, exists purely to give that transition room to run in. */
+#phone-transition-zone {
+  height: 60vh;
+}
+@media (max-width: 899px) {
+  /* PhoneScrolly disables itself below 900px (no room for a pinned rail),
+     so the zone it would otherwise animate through is just dead scroll. */
+  #phone-transition-zone {
+    height: 0;
+  }
+}
+
+/* Two-column at wide viewports: the ledger keeps its full width below
+   900px (PhoneScrolly is disabled there, so the dock-anchor column would
+   otherwise reserve space for a phone that never arrives). */
+.features-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 900px) {
+  .features-grid {
+    grid-template-columns: minmax(0, 1fr) 272px;
+    gap: 50px;
+    align-items: start;
+  }
+}
+.dock-anchor {
+  display: none;
+}
+@media (min-width: 900px) {
+  .dock-anchor {
+    display: block;
+    position: sticky;
+    top: calc(50vh - 279px);
+    width: 272px;
+    height: 558px;
+  }
+}
+
+/* Features' rows: each row's own top edge is cut open by the same -18deg
+   blade tick as the theme-toggle icon and the hero mark, once the section
+   scrolls into view (.rv.in, from RevealSection's IntersectionObserver).
+   The seam is the tick's wake (scaleX drawn left-to-right, not faded in),
+   and the row's text pops in on the exact same delay/duration as the cut
+   itself — one motion, not a cut followed by a separate text animation. */
+.rows--ledger {
   border-top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
-.rows--cards .row {
-  --glow-padding: 16px;
-  border-bottom: 0;
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  padding: clamp(24px, 3.6vw, 38px);
-  /* entrance: each card fades/lifts in on its own transition-delay (set
-     inline per card in features.tsx) once the section's IntersectionObserver
-     adds .in — a cascade, rather than the whole grid appearing as one block */
+.rows--ledger .row {
+  position: relative;
+  padding: clamp(26px, 4vw, 40px) 0 clamp(22px, 3.4vw, 32px);
+}
+.row-seam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--rule);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: var(--d, 0ms);
+}
+.rv.in .row-seam {
+  transform: scaleX(1);
+}
+.blade-tick {
+  position: absolute;
+  top: 0;
+  left: 0%;
+  width: 22px;
+  height: 12px;
+  margin-top: -5.5px;
   opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1), box-shadow 0.2s ease;
+  pointer-events: none;
 }
-.rv.in .rows--cards .row {
-  opacity: 1;
-  transform: none;
+.blade-tick::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  box-shadow: 0 0 3px var(--accent), 0 0 12px 1px color-mix(in srgb, var(--accent) 65%, transparent);
+  transform: rotate(-18deg);
 }
-.rows--cards .row:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 32px -12px rgba(11, 11, 11, 0.28), 0 2px 4px rgba(11, 11, 11, 0.1);
+.rv.in .blade-tick {
+  animation: tick-run 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: var(--d, 0ms);
 }
-[data-theme='dark'] .rows--cards .row:hover {
-  box-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.65), 0 2px 4px rgba(0, 0, 0, 0.35);
+@keyframes tick-run {
+  0% {
+    opacity: 1;
+    left: 0%;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    left: 100%;
+  }
+}
+/* text pop, gated on scroll (unlike the hero's .pop, which just runs on
+   mount): paused until .rv.in, same delay/duration as the cut above so
+   both move together rather than one after the other */
+.pop--gated {
+  animation-duration: 0.9s;
+  animation-play-state: paused;
+}
+.rv.in .pop--gated {
+  animation-play-state: running;
 }
 .row-label {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 20px;
+}
+.row-index {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-faint);
+  letter-spacing: 0.05em;
 }
 .row-en {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.17em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--accent);
 }
 .row h3 {
   font-family: var(--display);
@@ -620,6 +1065,8 @@ a {
   list-style: none;
 }
 .chips li {
+  position: relative;
+  overflow: hidden;
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.05em;
@@ -630,60 +1077,12 @@ a {
 }
 
 /* ---------- install ---------- */
-.tablewrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--rule);
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 520px;
-  font-size: 14.5px;
-}
-th,
-td {
-  text-align: left;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--rule);
-  vertical-align: top;
-}
-th {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  font-weight: 400;
-}
-tr:last-child td {
-  border-bottom: 0;
-}
-tbody tr {
-  transition: background-color 0.15s ease;
-}
-tbody tr:hover {
-  background: var(--panel);
-}
-td strong {
-  font-weight: 700;
-}
-.yes {
-  color: var(--accent);
-}
-.no {
-  color: var(--ink-faint);
-}
-
-.callout {
-  margin-top: 28px;
-  border-left: 2px solid var(--accent);
-  padding: 16px 0 16px 20px;
+.manifesto-body {
+  max-width: 62ch;
   color: var(--ink-soft);
-  max-width: 66ch;
 }
-.callout b {
-  color: var(--ink);
+.manifesto-body a {
+  color: var(--accent);
 }
 
 /* ---------- convergence (every piece, one build) ----------

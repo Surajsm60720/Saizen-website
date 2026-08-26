@@ -1,43 +1,28 @@
 import { RevealSection } from './reveal-section';
-import { installMethods } from '@/lib/content';
+
+const FACTS = ['No App Store listing', 'No telemetry', 'Open source', 'Sideload, not a store'];
 
 export function Install() {
   return (
     <RevealSection>
       <div className="wrap">
         <div className="sec-head">
-          <h2 className="sec-title">Getting it onto a phone</h2>
+          <h2 className="sec-title">Built in the open, outside the App Store</h2>
           <p className="sec-lede">
-            Saizen is a personal sideload project. There is no App Store listing and no TestFlight.
+            No company, no ads, no telemetry — an open build anyone can run, inspect, or fork.
           </p>
         </div>
-        <div className="tablewrap">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Method</th>
-                <th scope="col">Paid account</th>
-                <th scope="col">What to expect</th>
-              </tr>
-            </thead>
-            <tbody>
-              {installMethods.map((row) => (
-                <tr key={row.method}>
-                  <td>
-                    <strong>{row.method}</strong>
-                  </td>
-                  <td className={row.paidAccountLevel === 'yes' ? 'yes' : 'no'}>{row.paidAccount}</td>
-                  <td>{row.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="callout">
-          <b>On version numbers.</b> Release IPAs use minor versions only — 1.2, 1.4, and so on. Patch builds like
-          1.4.1 and 1.4.2 are local sideload builds and do not get their own Release asset. v1.4.0 is the current
-          architecture IPA.
+        <p className="manifesto-body">
+          Saizen isn&apos;t submitted to the App Store, so there is no listing and no TestFlight. What exists
+          instead is an open-source IPA — signed and sideloaded from{' '}
+          <a href="https://github.com/Surajsm60720/Saizen/releases">GitHub Releases</a>, with the full source
+          available for anyone who wants to build it themselves.
         </p>
+        <ul className="chips">
+          {FACTS.map((fact) => (
+            <li key={fact}>{fact}</li>
+          ))}
+        </ul>
       </div>
     </RevealSection>
   );

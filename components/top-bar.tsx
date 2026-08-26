@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ThemeToggle } from './theme-toggle';
+import { ThemeSwitcher } from './theme-switcher';
 import { GlassSurface } from './glass-surface';
 
 export function TopBar() {
@@ -10,7 +10,7 @@ export function TopBar() {
           Saizen
         </Link>
         <span className="ver">v1.4.2</span>
-        <ThemeToggle />
+        <ThemeSwitcher />
       </div>
     </GlassSurface>
   );

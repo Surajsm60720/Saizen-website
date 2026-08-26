@@ -5,13 +5,6 @@ export interface Feature {
   chips?: string[];
 }
 
-export interface InstallMethod {
-  method: string;
-  paidAccount: string;
-  paidAccountLevel: 'yes' | 'no';
-  notes: string;
-}
-
 export const features: Feature[] = [
   {
     en: 'Browse',
@@ -66,29 +59,3 @@ export const features: Feature[] = [
   },
 ];
 
-export const installMethods: InstallMethod[] = [
-  {
-    method: 'Xcode → Run',
-    paidAccount: 'Not needed',
-    paidAccountLevel: 'yes',
-    notes: 'Best for daily personal use. Certificate lasts about 7 days.',
-  },
-  {
-    method: 'Sideloadly / AltStore / Feather',
-    paidAccount: 'Not needed',
-    paidAccountLevel: 'yes',
-    notes: 'Free Apple ID, roughly 7-day certs, re-sign periodically.',
-  },
-  {
-    method: 'GitHub Release IPA',
-    paidAccount: 'Not needed to host',
-    paidAccountLevel: 'yes',
-    notes: 'Installing still needs a sideload tool. Each installer trusts the certificate on their own device.',
-  },
-  {
-    method: 'App Store / TestFlight',
-    paidAccount: 'Required',
-    paidAccountLevel: 'no',
-    notes: 'Not available on a free account, and not a goal for this project.',
-  },
-];

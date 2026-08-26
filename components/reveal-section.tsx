@@ -5,10 +5,11 @@ import { useEffect, useRef } from 'react';
 interface RevealSectionProps {
   alt?: boolean;
   className?: string;
+  id?: string;
   children: React.ReactNode;
 }
 
-export function RevealSection({ alt = false, className = '', children }: RevealSectionProps) {
+export function RevealSection({ alt = false, className = '', id, children }: RevealSectionProps) {
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export function RevealSection({ alt = false, className = '', children }: RevealS
   const classes = ['sec', alt ? 'sec-alt' : '', 'rv', className].filter(Boolean).join(' ');
 
   return (
-    <section ref={ref} className={classes}>
+    <section ref={ref} id={id} className={classes}>
       {children}
     </section>
   );

@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 
 const themeScript = `(function(){try{var key=${JSON.stringify(
   THEME_STORAGE_KEY
-)};var stored=localStorage.getItem(key);var theme=(stored==='light'||stored==='dark')?stored:(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.dataset.theme=theme;}catch(e){}})();`;
+)};var stored=localStorage.getItem(key);var pref=(stored==='light'||stored==='dark'||stored==='system')?stored:'system';var resolved=pref==='system'?(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):pref;document.documentElement.dataset.theme=resolved;}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

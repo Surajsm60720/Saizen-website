@@ -25,9 +25,7 @@ export function Hero() {
   return (
     <section className="hero">
       <div className="wrap">
-        <span className="hero-mark" aria-hidden="true">
-          最善
-        </span>
+        <div className="hero-grid">
         <div className="hero-content">
         <p className="eyebrow">
           <span className="mask">
@@ -111,6 +109,12 @@ export function Hero() {
             <span className="pop" style={popDelay(1320)}>Sideload only — no App Store build</span>
           </span>
         </p>
+        </div>
+        {/* Reserves the phone's resting footprint — the real phone is a
+            single `position: fixed` element (PhoneScrolly) that reads this
+            slot's rect to dock here, then flies on toward Features as the
+            page scrolls, rather than being rendered inside Hero itself. */}
+        <div className="hero-device" id="hero-phone-anchor" aria-hidden="true" />
         </div>
       </div>
     </section>
