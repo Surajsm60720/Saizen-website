@@ -66,6 +66,13 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  /* Scrollbar hidden for a seamless full-bleed look — scrolling itself is
+     untouched, only the visual track/thumb are gone. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 body {
   margin: 0;
@@ -517,6 +524,20 @@ a {
      a rotated flat element has no vanishing point and reads as a plain
      skew rather than a surface tilting in 3D. */
   perspective: 1400px;
+  /* The actual motion between sections lives here, not in JS: PhoneScrolly
+     picks a discrete target (hero / docked / tagline / gone) from plain
+     threshold checks and just sets that transform directly — this single
+     fixed-duration transition is what makes the move look smooth,
+     independent of how fast the page is scrolled. The old approach lerped
+     x/y/scale continuously across a tall dead-scroll zone instead, which
+     meant the phone stayed lingering over whatever content happened to be
+     underneath for however long that scroll took. */
+  /* The 0.9s opacity covers two different fades with the same timing:
+     the initial entrance (PhoneScrolly holds opacity at 0 briefly after
+     mount so this reads as a real fade-in, not an instant appearance)
+     and the exit before Install. Long enough to feel deliberate rather
+     than a flicker, short enough not to drag either one out. */
+  transition: transform 0.6s cubic-bezier(0.22, 0.85, 0.32, 1), opacity 0.9s ease;
 }
 .phone {
   --w: 272px;
@@ -525,18 +546,13 @@ a {
   --radius: 54px;
   --rx: 0deg;
   --ry: 0deg;
-  --spin: 0deg;
-  --roll: 0deg;
   position: relative;
   width: var(--w);
   height: var(--h);
   border-radius: var(--radius);
   transform-style: preserve-3d;
-  /* rx/ry = pointer tilt (hero only), spin = the one-time takeover
-     flourish (left at 360deg after firing, never reset — identical at
-     rest to 0deg, so no reverse-spin snap-back), roll = the landscape
-     flip for Player (rotateZ(-90deg): top edge goes left, bottom right) */
-  transform: rotateX(var(--rx)) rotateY(var(--ry)) rotateY(var(--spin)) rotateZ(var(--roll));
+  /* Pointer tilt only (hero slot) — no spin flourish on the way out. */
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
   transition: transform 0.25s cubic-bezier(0.22, 0.85, 0.32, 1);
   background: linear-gradient(155deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 14%),
     linear-gradient(20deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 30%),
@@ -545,11 +561,6 @@ a {
     inset 0 -1.5px 2px rgba(0, 0, 0, 0.6), 0 40px 70px -25px rgba(0, 0, 0, 0.55), 0 10px 24px -12px rgba(0, 0, 0, 0.45);
   padding: var(--bezel);
   backface-visibility: hidden;
-}
-/* The spin flourish plays over a longer, snappier curve than the regular
-   tilt transition — swapped in only while it runs. */
-.phone.spinning {
-  transition: transform 0.85s cubic-bezier(0.65, 0, 0.35, 1);
 }
 .phone::after {
   content: '';
@@ -561,16 +572,6 @@ a {
   background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 32%, transparent), transparent 72%);
   filter: blur(2px);
   z-index: -1;
-}
-/* Flat placeholder back face, revealed only mid-spin as the front rotates
-   away — a real designed back face is future work. */
-.phone__back {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius);
-  background: radial-gradient(120% 90% at 70% 100%, #4a4a4e 0%, #232326 60%, #08080a 100%);
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
 }
 .phone__screen {
   position: relative;
@@ -722,7 +723,10 @@ a {
 }
 /* A "recording" placeholder — play icon + progress bar — rather than a
    flat colour tag: sells "this is video content" without needing the
-   real captures that are still the actual blocker. */
+   real captures that are still the actual blocker. Shared by the intro
+   sequence (.phone__shot) and the per-feature screens (.phone__feature);
+   they differ only in ground colour, below. */
+.phone__shot,
 .phone__feature {
   position: absolute;
   inset: 0;
@@ -731,13 +735,22 @@ a {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: color-mix(in srgb, var(--fc, var(--accent)) 22%, #0a0a0b);
   opacity: 0;
   transition: opacity 0.35s ease;
 }
+/* Features carry their own identity colour; the intro shots stay neutral
+   — they're the app opening, not one feature among nine. */
+.phone__shot {
+  background: linear-gradient(160deg, #17171b 0%, #0c0c0e 55%, #050506 100%);
+}
+.phone__feature {
+  background: color-mix(in srgb, var(--fc, var(--accent)) 22%, #0a0a0b);
+}
+.phone__shot.is-shown,
 .phone__feature.is-shown {
   opacity: 1;
 }
+.phone__shot .tag,
 .phone__feature .tag {
   font-family: var(--mono);
   font-size: 10.5px;
@@ -745,6 +758,7 @@ a {
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.85);
 }
+.phone__shot .play,
 .phone__feature .play {
   width: 34px;
   height: 34px;
@@ -754,6 +768,7 @@ a {
   align-items: center;
   justify-content: center;
 }
+.phone__shot .play::after,
 .phone__feature .play::after {
   content: '';
   border-left: 9px solid #fff;
@@ -761,10 +776,7 @@ a {
   border-bottom: 6px solid transparent;
   margin-left: 2px;
 }
-.phone__feature--landscape .play {
-  width: 44px;
-  height: 44px;
-}
+.phone__shot .bar,
 .phone__feature .bar {
   position: absolute;
   left: 14px;
@@ -775,6 +787,7 @@ a {
   border-radius: 2px;
   overflow: hidden;
 }
+.phone__shot .bar::after,
 .phone__feature .bar::after {
   content: '';
   position: absolute;
@@ -802,11 +815,33 @@ a {
 .phone__tagline p {
   font-family: var(--display);
   font-size: 17px;
+  line-height: 1.5;
   color: #fff;
   margin: 0;
 }
-.phone__tagline .accent {
+/* Each line reacts directly to its own is-shown, set from PhoneScrolly's
+   scroll-position count (taglineLines) rather than a fixed timer — a
+   plain transition here, not the hero's mask/pop keyframe, since this
+   needs to hold cleanly at whatever line count scroll position implies,
+   not just play once through on trigger. */
+.phone__tagline-line {
+  display: block;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.phone__tagline-line.is-shown {
+  opacity: 1;
+  transform: none;
+}
+.phone__tagline-line.accent {
   color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone__tagline-line {
+    transition: opacity 0.2s ease;
+    transform: none;
+  }
 }
 .phone__btn {
   position: absolute;
@@ -1070,27 +1105,29 @@ a {
     grid-template-columns: minmax(190px, 258px) minmax(0, 1fr);
   }
 }
-/* Scroll distance the hero-to-features phone takeover plays out over
-   (PhoneScrolly reads this element's own rect to compute progress) —
-   empty, exists purely to give that transition room to run in. */
-/* Full viewport height, not a fraction of it — the takeover's progress is
-   driven by this zone's own bottom edge crossing the viewport, so its
-   height IS how much clearance Features' heading has once takeover ends.
-   Anything shorter than 100vh guaranteed the heading would already be
-   sitting at viewport-centre — fighting the phone for the same spot — the
-   instant the takeover finished. */
-#phone-transition-zone {
-  height: 100vh;
+/* The phone parks dead centre for this zone's whole length while its
+   screen steps through the intro captures — so this height is the scroll
+   budget for that sequence, split evenly per shot by PhoneScrolly. The
+   zone spends its first viewport waiting for the hero to clear and its
+   last handing off to Features, so the stepped span is height - 100vh:
+   300vh / 3 shots is ~67vh each. Retune alongside INTRO_SHOTS. */
+#phone-intro-zone {
+  height: 300vh;
 }
-/* Scroll distance the closing-tagline stage plays out over — the phone
-   re-centres once more here before fading out for good. */
+/* Same idea for the closing line. This zone spends its first half-viewport
+   arriving at the centre and its last full viewport handing off to
+   Install (the exit needs that much lead for the fade to finish
+   off-screen), leaving height minus 100vh as the span the line actually
+   holds for — 180vh read as instant/out-of-sync (only ~80vh of that span,
+   60% of which is a single scroll gesture), so this is wide enough that
+   the three-line build genuinely tracks continued scrolling. */
 #phone-tagline-zone {
-  height: 70vh;
+  height: 280vh;
 }
 @media (max-width: 899px) {
   /* PhoneScrolly disables itself below 900px (no room for a pinned rail),
-     so the zones it would otherwise animate through are just dead scroll. */
-  #phone-transition-zone,
+     so these zones would just be enormous stretches of blank scroll. */
+  #phone-intro-zone,
   #phone-tagline-zone {
     height: 0;
   }
@@ -1334,29 +1371,79 @@ a {
 /* ---------- footer ---------- */
 .foot {
   border-top: 1px solid var(--rule);
-  padding: 44px 0 60px;
+  padding: 52px 0 40px;
 }
-.foot .wrap {
+.foot-top {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px 32px;
+  justify-content: space-between;
   align-items: center;
+  gap: 24px 48px;
+  padding-bottom: 32px;
 }
-.foot a {
+.foot-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.foot-mark .kanji {
+  font-family: var(--cjk);
+  color: var(--accent);
+  font-size: 28px;
+  line-height: 1;
+  margin: 0;
+}
+.foot-mark .word {
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin: 0;
+}
+.foot-mark .reading {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-faint);
+  margin: 3px 0 0;
+}
+.foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+}
+.foot-links a {
   font-family: var(--mono);
   font-size: 12px;
   letter-spacing: 0.09em;
   text-decoration: none;
   color: var(--ink-soft);
 }
-.foot a:hover {
+.foot-links a:hover {
   color: var(--accent);
 }
+.foot-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
 .foot .fine {
-  margin-left: auto;
   font-size: 12px;
   color: var(--ink-faint);
-  max-width: 42ch;
+  max-width: 52ch;
+  margin: 0;
+}
+.foot .credit {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  margin: 0;
 }
 
 /* ---------- scroll reveal ---------- */

@@ -86,25 +86,39 @@ export function Convergence() {
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    // How the fall-in cascade is paced: a uniform per-item stagger made
+    // every chip start within ~45ms of its neighbour, so with two dozen
+    // of them the whole thing read as one indistinct pull rather than a
+    // list anyone could actually read. Instead the start-time gaps shrink
+    // along a sqrt curve — wide at the front (first couple land alone,
+    // readable) and tight by the end (the last handful arrive together,
+    // fast) — while each fragment's own travel duration shortens the same
+    // way, so early ones also move slower and hang at full opacity longer.
+    const FALL_SPREAD = 3600;
+    const DUR_SLOW = 1700;
+    const DUR_FAST = 650;
+
     function buildFragments() {
       stage!.querySelectorAll('.conv-frag').forEach((el) => el.remove());
       frags = [];
       const cx = W / 2;
       const cy = H / 2;
       const maxRadius = Math.max(W, H) * 0.7;
-      for (let i = 0; i < FRAGMENT_LABELS.length; i++) {
-        const angle = (Math.PI * 2 * i) / FRAGMENT_LABELS.length - Math.PI / 2 + (Math.random() * 0.4 - 0.2);
+      const n = FRAGMENT_LABELS.length;
+      for (let i = 0; i < n; i++) {
+        const angle = (Math.PI * 2 * i) / n - Math.PI / 2 + (Math.random() * 0.4 - 0.2);
         const radius = maxRadius * (0.35 + Math.random() * 0.65);
         const el = document.createElement('span');
         el.className = 'conv-frag';
         el.textContent = FRAGMENT_LABELS[i];
         stage!.insertBefore(el, mark);
+        const seqT = n > 1 ? i / (n - 1) : 0;
         frags.push({
           el,
           startAngle: angle,
           startRadius: radius,
-          delay: i * 45 + Math.random() * 35,
-          duration: 1000 + Math.random() * 450,
+          delay: FALL_SPREAD * Math.sqrt(seqT) + Math.random() * 40,
+          duration: DUR_SLOW - (DUR_SLOW - DUR_FAST) * seqT + Math.random() * 120,
           cx,
           cy,
           w: 0,
@@ -269,7 +283,11 @@ export function Convergence() {
           }
         }
       },
-      { rootMargin: '0px 0px -20% 0px' }
+      // Only the top 55% of the viewport counts as "in view" for this check,
+      // so the fall-in doesn't fire the moment the stage's top edge grazes
+      // the bottom of the screen — it waits until the section has actually
+      // scrolled well into view.
+      { rootMargin: '0px 0px -45% 0px' }
     );
     observer.observe(stage);
 

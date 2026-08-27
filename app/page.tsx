@@ -10,13 +10,14 @@ export default function Home() {
     <>
       <main id="top">
         <Hero />
-        {/* Scroll distance the hero-to-features phone takeover plays out
-            over — see PhoneScrolly. Empty on purpose. */}
-        <div id="phone-transition-zone" aria-hidden="true" />
+        {/* Tall, deliberately empty: the phone parks in the middle of the
+            viewport for this whole stretch while its screen steps through
+            the intro captures, one per slice of scroll. Features can't
+            arrive until it's been scrolled through. See PhoneScrolly. */}
+        <div id="phone-intro-zone" aria-hidden="true" />
         <Features />
-        {/* Scroll distance the closing-tagline stage plays out over — the
-            phone re-centres once more and shows the closing line before
-            fading out for good. Empty on purpose, see PhoneScrolly. */}
+        {/* Same idea, closing beat: the phone re-centres and holds the
+            tagline for this stretch before fading out. Empty on purpose. */}
         <div id="phone-tagline-zone" aria-hidden="true" />
         <Install />
         <Convergence />
