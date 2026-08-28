@@ -15,7 +15,10 @@ export function Install() {
         <p className="manifesto-body">
           Saizen isn&apos;t submitted to the App Store, so there is no listing and no TestFlight. What exists
           instead is an open-source IPA — signed and sideloaded from{' '}
-          <a href="https://github.com/Surajsm60720/Saizen/releases">GitHub Releases</a>, with the full source
+          <a href="https://github.com/Surajsm60720/Saizen/releases" target="_blank" rel="noopener noreferrer">
+            GitHub Releases
+          </a>
+          , with the full source
           available for anyone who wants to build it themselves.
         </p>
         <ul className="chips">

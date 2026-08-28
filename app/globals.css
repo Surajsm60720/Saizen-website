@@ -70,6 +70,11 @@ html {
      untouched, only the visual track/thumb are gone. */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* Belt-and-suspenders alongside body's overflow-x below: decorative
+     glows (.edge-light) intentionally bleed a few px past their own box
+     with overflow: visible, which can otherwise register as real
+     horizontal scroll room on narrow viewports. */
+  overflow-x: hidden;
 }
 html::-webkit-scrollbar {
   display: none;
@@ -476,15 +481,16 @@ a {
   z-index: 1;
 }
 /* Two-column at wide viewports: text left, device scaffold right. Single
-   column (frame hidden) below 900px — same cutoff the old watermark used,
-   for the same reason: no spare width once the text column needs it. */
+   column (frame hidden) below 1100px — PhoneScrolly doesn't dock a phone
+   in the hero at all below that width (see its mobile path), so this slot
+   would otherwise just be empty space. */
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: 40px;
 }
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .hero-grid {
     grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   }
@@ -493,7 +499,7 @@ a {
   display: none;
   justify-content: center;
 }
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .hero-device {
     display: flex;
     width: 272px;
@@ -538,6 +544,80 @@ a {
      and the exit before Install. Long enough to feel deliberate rather
      than a flicker, short enough not to drag either one out. */
   transition: transform 0.6s cubic-bezier(0.22, 0.85, 0.32, 1), opacity 0.9s ease;
+}
+/* Below 1100px, PhoneScrolly's mobile path writes transform imperatively
+   every tick too (same as desktop) rather than a fixed CSS rule — it
+   needs to size the phone to whatever room is actually free below the
+   feature card, measured live, which a static breakpoint value can't do.
+   An earlier version tried a calc()-computed scale() here; dividing two
+   different-unit lengths that way is invalid in Firefox and drops the
+   whole transform declaration, so that's specifically why this is JS,
+   not just stylistic preference. */
+/* The mobile-only title+body card pinned above the phone during the
+   per-feature step (see phone-scrolly.tsx's mobile path) — desktop shows
+   the same information via the ledger rows instead, so this only exists
+   below 1100px. Same crossfade shape as .phone__feature/.phone__tagline
+   (all items stacked via inset:0, `is-shown` toggles opacity/transform)
+   rather than swapping textContent, so each change transitions instead
+   of popping. */
+.phone-card-m {
+  display: none;
+}
+@media (max-width: 1099px) {
+  .phone-card-m {
+    display: block;
+    position: fixed;
+    top: 6vh;
+    left: var(--gut);
+    right: var(--gut);
+    height: 18vh;
+    z-index: 15;
+    pointer-events: none;
+    overflow: hidden;
+  }
+}
+.phone-card-m__item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 0.85, 0.32, 1);
+}
+.phone-card-m__item.is-shown {
+  opacity: 1;
+  transform: none;
+}
+.phone-card-m__eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+}
+.phone-card-m__eyebrow .idx {
+  color: var(--ink-faint);
+  margin-right: 6px;
+}
+.phone-card-m__item h3 {
+  font-family: var(--display);
+  font-size: clamp(20px, 5.2vw, 26px);
+  line-height: 1.2;
+  margin: 0;
+}
+.phone-card-m__body {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .phone {
   --w: 272px;
@@ -721,21 +801,16 @@ a {
     transform: none;
   }
 }
-/* A "recording" placeholder — play icon + progress bar — rather than a
-   flat colour tag: sells "this is video content" without needing the
-   real captures that are still the actual blocker. Shared by the intro
-   sequence (.phone__shot) and the per-feature screens (.phone__feature);
-   they differ only in ground colour, below. */
+/* Real device screenshots/recordings (public/media/), cropped to drop the
+   system status bar. Shared by the intro sequence (.phone__shot) and the
+   per-feature screens (.phone__feature) — they differ only in ground
+   colour (shown briefly while the asset loads), below. */
 .phone__shot,
 .phone__feature {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
   opacity: 0;
+  overflow: hidden;
   transition: opacity 0.35s ease;
 }
 /* Features carry their own identity colour; the intro shots stay neutral
@@ -750,52 +825,42 @@ a {
 .phone__feature.is-shown {
   opacity: 1;
 }
+.phone__media {
+  /* Full bleed, no reserved gutter — the island sits on top of the
+     content the same way it does on a real device (apps render behind
+     it, they don't leave empty space for it). */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+/* Bottom scrim keeps the tag caption legible over busy screenshot
+   content instead of needing its own solid backing chip. */
+.phone__shot::after,
+.phone__feature::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0) 100%);
+  pointer-events: none;
+}
 .phone__shot .tag,
 .phone__feature .tag {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 1;
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-}
-.phone__shot .play,
-.phone__feature .play {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.phone__shot .play::after,
-.phone__feature .play::after {
-  content: '';
-  border-left: 9px solid #fff;
-  border-top: 6px solid transparent;
-  border-bottom: 6px solid transparent;
-  margin-left: 2px;
-}
-.phone__shot .bar,
-.phone__feature .bar {
-  position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.phone__shot .bar::after,
-.phone__feature .bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 38%;
-  background: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.92);
 }
 .phone__tagline {
   position: absolute;
@@ -1124,23 +1189,21 @@ a {
 #phone-tagline-zone {
   height: 280vh;
 }
-@media (max-width: 899px) {
-  /* PhoneScrolly disables itself below 900px (no room for a pinned rail),
-     so these zones would just be enormous stretches of blank scroll. */
-  #phone-intro-zone,
-  #phone-tagline-zone {
-    height: 0;
-  }
-}
+/* No mobile collapse here any more — both zones are now used at every
+   width: desktop's rail sequence reads them exactly as before, and
+   PhoneScrolly's mobile path (<1100px) reuses these same two divs for its
+   own intro/tagline stages rather than needing its own copies. */
 
 /* Two-column at wide viewports: the ledger keeps its full width below
-   900px (PhoneScrolly is disabled there, so the dock-anchor column would
-   otherwise reserve space for a phone that never arrives). */
+   1100px, but only visually — it's actually hidden there (see
+   .rows--ledger below) in favour of PhoneScrolly's mobile pinned-card
+   sequence, so this rule mostly matters for how the two columns share
+   space once the rail is actually showing. */
 .features-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .features-grid {
     grid-template-columns: minmax(0, 1fr) 272px;
     gap: 50px;
@@ -1150,13 +1213,36 @@ a {
 .dock-anchor {
   display: none;
 }
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .dock-anchor {
     display: block;
     position: sticky;
     top: calc(50vh - 279px);
     width: 272px;
     height: 558px;
+  }
+}
+/* Below 1100px the ledger (with its own per-row IntersectionObserver
+   reveal) is replaced entirely by PhoneScrolly's mobile card+phone
+   sequence — hidden outright rather than just visually deprioritised, so
+   those observers don't do pointless work off mobile. */
+.rows--ledger {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .rows--ledger {
+    display: block;
+  }
+}
+/* Mirror image of the ledger toggle above: the mobile spacer only exists
+   below 1100px, where PhoneScrolly's mobile path reads its height to
+   drive the per-feature step sequence. */
+.phone-features-zone-m {
+  display: block;
+}
+@media (min-width: 1100px) {
+  .phone-features-zone-m {
+    display: none;
   }
 }
 
@@ -1442,7 +1528,6 @@ a {
   font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--ink-faint);
-  white-space: nowrap;
   margin: 0;
 }
 

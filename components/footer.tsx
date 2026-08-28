@@ -11,10 +11,22 @@ export function Footer() {
             </div>
           </div>
           <nav className="foot-links" aria-label="Project links">
-            <a href="https://github.com/Surajsm60720/Saizen">Source</a>
-            <a href="https://github.com/Surajsm60720/Saizen/releases">Releases</a>
-            <a href="https://github.com/Surajsm60720/Saizen/blob/main/docs/SECURITY_TEST_PLAN.md">Security</a>
-            <a href="https://github.com/Surajsm60720/Saizen/blob/main/STRUCTURE.md">Structure</a>
+            <a href="https://github.com/Surajsm60720/Saizen" target="_blank" rel="noopener noreferrer">
+              Source
+            </a>
+            <a href="https://github.com/Surajsm60720/Saizen/releases" target="_blank" rel="noopener noreferrer">
+              Releases
+            </a>
+            <a
+              href="https://github.com/Surajsm60720/Saizen/blob/main/docs/SECURITY_TEST_PLAN.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Security
+            </a>
+            <a href="https://github.com/Surajsm60720/Saizen/blob/main/STRUCTURE.md" target="_blank" rel="noopener noreferrer">
+              Structure
+            </a>
           </nav>
         </div>
         <div className="foot-bottom">

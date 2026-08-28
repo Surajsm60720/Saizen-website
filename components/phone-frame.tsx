@@ -1,8 +1,16 @@
 import { forwardRef, type CSSProperties } from 'react';
 
+export type ScreenMedia = { kind: 'image'; src: string } | { kind: 'video'; src: string; poster: string };
+
 export interface PhoneScreen {
   label: string;
   color: string;
+  media: ScreenMedia;
+}
+
+export interface IntroShot {
+  label: string;
+  src: string;
 }
 
 export type PhoneScreenKind = 'idle' | 'intro' | 'feature' | 'tagline';
@@ -11,7 +19,7 @@ const TAGLINE_LINES = ["The anime you’re watching,", 'now at the comfort of', 
 
 interface PhoneFrameProps {
   screens: PhoneScreen[];
-  introShots: string[];
+  introShots: IntroShot[];
   introIndex: number;
   activeIndex: number;
   taglineLines: number;
@@ -29,8 +37,10 @@ interface PhoneFrameProps {
  * scroll-stepped opening captures), feature (one per Features row) and
  * tagline (the closing line, echoing the hero's own — its three lines
  * build up as `taglineLines` climbs with continued scroll, not on a
- * fixed timer). Every "capture" is a labelled placeholder — real app
- * recordings are still the blocker. Portrait only, no landscape flip.
+ * fixed timer). Real device screenshots/recordings (`public/media/`),
+ * cropped to drop the system status bar and object-fit: cover'd to the
+ * screen's aspect ratio — a bottom scrim keeps the `tag` caption legible
+ * over busy content. Portrait only, no landscape flip.
  */
 export const PhoneFrame = forwardRef<HTMLDivElement, PhoneFrameProps>(function PhoneFrame(
   { screens, introShots, introIndex, activeIndex, taglineLines, screenKind },
@@ -55,12 +65,11 @@ export const PhoneFrame = forwardRef<HTMLDivElement, PhoneFrameProps>(function P
         </div>
         {introShots.map((shot, index) => (
           <div
-            key={shot}
+            key={shot.label}
             className={`phone__shot${screenKind === 'intro' && index === introIndex ? ' is-shown' : ''}`}
           >
-            <span className="tag">{shot}</span>
-            <span className="play" aria-hidden="true" />
-            <span className="bar" aria-hidden="true" />
+            <img className="phone__media" src={shot.src} alt="" loading="lazy" />
+            <span className="tag">{shot.label}</span>
           </div>
         ))}
         {screens.map((screen, index) => (
@@ -69,9 +78,21 @@ export const PhoneFrame = forwardRef<HTMLDivElement, PhoneFrameProps>(function P
             className={`phone__feature${screenKind === 'feature' && index === activeIndex ? ' is-shown' : ''}`}
             style={{ '--fc': screen.color } as CSSProperties}
           >
+            {screen.media.kind === 'video' ? (
+              <video
+                className="phone__media"
+                src={screen.media.src}
+                poster={screen.media.poster}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="none"
+              />
+            ) : (
+              <img className="phone__media" src={screen.media.src} alt="" loading="lazy" />
+            )}
             <span className="tag">{screen.label}</span>
-            <span className="play" aria-hidden="true" />
-            <span className="bar" aria-hidden="true" />
           </div>
         ))}
         <div className={`phone__tagline${screenKind === 'tagline' ? ' is-shown' : ''}`}>

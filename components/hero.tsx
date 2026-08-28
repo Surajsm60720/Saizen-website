@@ -79,14 +79,26 @@ export function Hero() {
         <div className="cta">
           <span className="mask" style={{ borderRadius: 24 }}>
             <span className="pop" style={popDelay(1030)}>
-              <GlassSurface as="a" className="btn btn-solid" href="https://github.com/Surajsm60720/Saizen/releases">
+              <GlassSurface
+                as="a"
+                className="btn btn-solid"
+                href="https://github.com/Surajsm60720/Saizen/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <span className="label">Get the IPA</span>
               </GlassSurface>
             </span>
           </span>
           <span className="mask" style={{ borderRadius: 24 }}>
             <span className="pop" style={popDelay(1100)}>
-              <GlassSurface as="a" className="btn btn-ghost" href="https://github.com/Surajsm60720/Saizen">
+              <GlassSurface
+                as="a"
+                className="btn btn-ghost"
+                href="https://github.com/Surajsm60720/Saizen"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <span className="label">Read the source</span>
               </GlassSurface>
             </span>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { PhoneFrame, type PhoneScreen, type PhoneScreenKind } from './phone-frame';
+import { PhoneFrame, type IntroShot, type PhoneScreen, type PhoneScreenKind, type ScreenMedia } from './phone-frame';
 import { features } from '@/lib/content';
 
 // Decorative per-feature identity colours — unrelated to the site's
@@ -20,15 +20,41 @@ const COLORS = [
   '#5E7A2A',
 ];
 
+// Real device captures (public/media/), keyed by the feature's own `en`
+// name so a reordering of lib/content.ts's features array can't silently
+// mismatch a screen with the wrong footage. Video vs. image per feature
+// was picked by whether the feature's value is fundamentally about
+// motion (a carousel, a live-dragged slider, a menu opening) or about
+// layout/information a still frame already reads fine — see the
+// mobile-experience discussion this asset set came out of.
+const FEATURE_MEDIA: Record<string, ScreenMedia> = {
+  Browse: { kind: 'video', src: '/media/browse.mp4', poster: '/media/browse-poster.webp' },
+  Search: { kind: 'video', src: '/media/search.mp4', poster: '/media/search-poster.webp' },
+  Detail: { kind: 'image', src: '/media/detail.webp' },
+  Schedule: { kind: 'image', src: '/media/schedule.webp' },
+  Player: { kind: 'video', src: '/media/player.mp4', poster: '/media/player-poster.webp' },
+  Downloads: { kind: 'image', src: '/media/downloads.webp' },
+  Accounts: { kind: 'image', src: '/media/accounts.webp' },
+  Incognito: { kind: 'image', src: '/media/incognito.webp' },
+  Appearance: { kind: 'video', src: '/media/appearance.mp4', poster: '/media/appearance-poster.webp' },
+};
+
 const SCREENS: PhoneScreen[] = features.map((feature, i) => ({
   label: feature.en,
   color: COLORS[i % COLORS.length],
+  media: FEATURE_MEDIA[feature.en] ?? { kind: 'image', src: '/media/detail.webp' },
 }));
 
-// Stand-ins for the real opening captures. Each gets an equal slice of
-// the intro zone's scroll, so the count here and #phone-intro-zone's
-// height together decide how long each one holds.
-const INTRO_SHOTS = ['Screenshot 1', 'Screenshot 2', 'Screenshot 3'];
+// The opening tour, before any named feature — Home, then a title's
+// Detail page, then the Player — three real captures instead of a
+// generic label. Each gets an equal slice of the intro zone's scroll, so
+// the count here and #phone-intro-zone's height together decide how long
+// each one holds.
+const INTRO_SHOTS: IntroShot[] = [
+  { label: 'Home', src: '/media/intro-1.webp' },
+  { label: 'Detail', src: '/media/intro-2.webp' },
+  { label: 'Player', src: '/media/intro-3.webp' },
+];
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
@@ -74,14 +100,169 @@ export function PhoneScrolly() {
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const wide = window.matchMedia('(min-width: 900px)').matches;
+    const wide = window.matchMedia('(min-width: 1100px)').matches;
     const fly = flyRef.current;
     const phone = phoneRef.current;
-    if (reduce || !wide || !fly || !phone) {
+    if (reduce || !fly || !phone) {
       if (fly) fly.style.opacity = '0';
       return;
     }
 
+    if (!wide) {
+      // ---- Mobile / tablet path (<1100px) ----
+      // No hero stage at all — the phone doesn't exist until the
+      // hero/features boundary, then stays pinned to one spot for each
+      // stage's whole duration (intro shots, then a per-feature step,
+      // then the tagline) rather than travelling between a hero slot and
+      // a side rail. Position/size ARE still written imperatively every
+      // tick (like desktop), just computed from the live viewport and
+      // the feature card's real measured bottom edge rather than fixed
+      // percentages — a fixed CSS scale also turned out to be Firefox's
+      // undoing (see the removed <1099px rule's history): dividing two
+      // different-unit lengths inside scale() is invalid there and drops
+      // the whole transform, and separately, fixed vh-based numbers for
+      // both the card and the phone could drift out of sync on unusual
+      // viewport heights. Measuring the card directly makes "never
+      // overlaps" a guarantee instead of two formulas hoped to agree.
+      //
+      // Also why there's no screenStage/moveTimer lag here: that exists
+      // on desktop purely to hold outgoing content until the phone
+      // physically arrives at a new x/y slot. The mobile phone never
+      // moves within a stage, so there's no arrival to wait for —
+      // content is driven straight off `stage`.
+      let mQueued = false;
+      let mLastKind: PhoneScreenKind | null = null;
+      let mLastActive = -2;
+      let mLastIntro = -1;
+      let mLastTaglineLines = -1;
+      let mTaglineEntryTop: number | null = null;
+
+      function mobileTick() {
+        mQueued = false;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        const introZone = document.getElementById('phone-intro-zone');
+        const featZone = document.getElementById('phone-features-zone-m');
+        const tagZone = document.getElementById('phone-tagline-zone');
+        const cardEl = document.querySelector<HTMLElement>('.phone-card-m');
+        if (!introZone || !featZone || !tagZone || !fly) return;
+
+        const introRect = introZone.getBoundingClientRect();
+        const featRect = featZone.getBoundingClientRect();
+        const tagRect = tagZone.getBoundingClientRect();
+
+        // Same shape as the desktop stage checks: each boundary uses
+        // whichever line guarantees the phone/card are never shown over
+        // content they don't belong on.
+        //
+        // 'arriving' is the stretch between the intro shots finishing and
+        // the features spacer's own top clearing the viewport — Features'
+        // "What is in the build" heading sits directly above that spacer
+        // and needs to scroll fully away first. The phone used to hold
+        // the last intro shot through that whole stretch, but the heading
+        // is tall enough (with body copy under it) that it kept scrolling
+        // up into the still-visible phone. Simpler and matches what was
+        // asked for: fade out for that stretch, fade back in once the
+        // feature card genuinely has room, rather than trying to hold a
+        // position that a variable-height heading can still collide with.
+        const fadeLead = vh * 0.5;
+        let stage: 'pre' | 'intro' | 'arriving' | 'features' | 'tagline' | 'gone';
+        if (tagRect.bottom <= vh + fadeLead) stage = 'gone';
+        else if (introRect.top > 0) stage = 'pre';
+        else if (introRect.bottom > vh) stage = 'intro';
+        else if (featRect.top > 0) stage = 'arriving';
+        else if (featRect.bottom > vh) stage = 'features';
+        else stage = 'tagline';
+
+        const hidden = stage === 'pre' || stage === 'arriving' || stage === 'gone';
+        fly.style.opacity = hidden ? '0' : '1';
+
+        if (!hidden) {
+          // Fill whatever room is actually available: from just below the
+          // feature card (when one is showing) or a small top margin
+          // (intro, tagline — no card competing for space) down to near
+          // the bottom of the viewport. Capped at the phone's native
+          // 272x558 so it never scales up past desktop's own size on a
+          // tall/narrow viewport, and width-capped separately so a
+          // short-but-wide viewport doesn't blow it out sideways.
+          const topLimit = stage === 'features' && cardEl ? cardEl.getBoundingClientRect().bottom + 14 : vh * 0.07;
+          const available = Math.max(vh - topLimit - 16, 160);
+          let h = Math.min(available * 0.96, 558);
+          let w = h * (272 / 558);
+          const maxW = vw * 0.86;
+          if (w > maxW) {
+            w = maxW;
+            h = w * (558 / 272);
+          }
+          const scale = h / 558;
+          const x = vw / 2 - w / 2;
+          fly.style.transform = `translate(${x}px, ${topLimit}px) scale(${scale})`;
+        }
+
+        let kind: PhoneScreenKind = stage === 'gone' ? mLastKind ?? 'idle' : 'idle';
+        let activeIdx = stage === 'gone' ? mLastActive : -1;
+        let introIdx = mLastIntro < 0 ? 0 : mLastIntro;
+
+        if (stage === 'intro') {
+          kind = 'intro';
+          const span = introRect.height - vh;
+          const p = clamp(-introRect.top / (span || 1), 0, 0.999999);
+          introIdx = Math.floor(p * INTRO_SHOTS.length);
+        } else if (stage === 'features') {
+          kind = 'feature';
+          const span = featRect.height - vh;
+          const p = clamp(-featRect.top / (span || 1), 0, 0.999999);
+          activeIdx = Math.floor(p * SCREENS.length);
+        } else if (stage === 'tagline') {
+          kind = 'tagline';
+        }
+
+        // Same entry-anchored progress as desktop's tagline reveal (see
+        // that block's comment) — without it, the reveal is measured from
+        // raw scroll position while the container's own CSS opacity fade
+        // (gated by the screenKind state update below) ramps in on its
+        // own separate clock, so the lines can already look mostly or
+        // fully revealed the moment the text is actually visible.
+        let taglineLines = 0;
+        if (stage === 'tagline') {
+          if (mTaglineEntryTop === null) mTaglineEntryTop = tagRect.top;
+          const activeSpan = tagRect.height - vh;
+          const p = clamp((mTaglineEntryTop - tagRect.top) / (activeSpan * 0.6 || 1), 0, 1);
+          taglineLines = p < 0.15 ? 0 : p < 0.45 ? 1 : p < 0.75 ? 2 : 3;
+        } else {
+          mTaglineEntryTop = null;
+        }
+
+        if (kind !== mLastKind || activeIdx !== mLastActive || introIdx !== mLastIntro || taglineLines !== mLastTaglineLines) {
+          mLastKind = kind;
+          mLastActive = activeIdx;
+          mLastIntro = introIdx;
+          mLastTaglineLines = taglineLines;
+          setScreenKind(kind);
+          setActiveFeature(activeIdx);
+          setIntroIndex(introIdx);
+          setTaglineLines(taglineLines);
+        }
+      }
+
+      function onMobileScroll() {
+        if (mQueued) return;
+        mQueued = true;
+        requestAnimationFrame(mobileTick);
+      }
+
+      window.addEventListener('scroll', onMobileScroll, { passive: true });
+      window.addEventListener('resize', onMobileScroll);
+      mobileTick();
+
+      return () => {
+        window.removeEventListener('scroll', onMobileScroll);
+        window.removeEventListener('resize', onMobileScroll);
+      };
+    }
+
+    // ---- Desktop path (>=1100px) ----
     // Natural (unscaled) size of the rendered phone, read once — avoids
     // hardcoding a size that could drift from the actual CSS.
     const rect = fly.getBoundingClientRect();
@@ -351,16 +532,36 @@ export function PhoneScrolly() {
   }, []);
 
   return (
-    <div className="phone-fly" ref={flyRef} aria-hidden="true">
-      <PhoneFrame
-        ref={phoneRef}
-        screens={SCREENS}
-        introShots={INTRO_SHOTS}
-        introIndex={introIndex}
-        activeIndex={activeFeature}
-        taglineLines={taglineLines}
-        screenKind={screenKind}
-      />
-    </div>
+    <>
+      <div className="phone-fly" ref={flyRef} aria-hidden="true">
+        <PhoneFrame
+          ref={phoneRef}
+          screens={SCREENS}
+          introShots={INTRO_SHOTS}
+          introIndex={introIndex}
+          activeIndex={activeFeature}
+          taglineLines={taglineLines}
+          screenKind={screenKind}
+        />
+      </div>
+      {/* Mobile/tablet only (see .phone-card-m's <1100px rule) — the
+          title+body pinned above the phone while it steps through each
+          feature. Desktop shows this same information via the ledger
+          rows instead, so this stays hidden there. */}
+      <div className="phone-card-m" aria-hidden="true">
+        {features.map((feature, index) => (
+          <div
+            key={feature.en}
+            className={`phone-card-m__item${screenKind === 'feature' && index === activeFeature ? ' is-shown' : ''}`}
+          >
+            <p className="phone-card-m__eyebrow">
+              <span className="idx">{String(index + 1).padStart(2, '0')}</span> {feature.en}
+            </p>
+            <h3>{feature.title}</h3>
+            <p className="phone-card-m__body">{feature.body}</p>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

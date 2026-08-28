@@ -58,6 +58,17 @@ export function Features() {
             same anchor-rect pattern as the hero slot, read by PhoneScrolly. */}
         <div className="dock-anchor" id="dock-phone-anchor" aria-hidden="true" />
         </div>
+        {/* Mobile/tablet only (<1100px, see globals.css) — replaces the
+            ledger above with a tall empty spacer PhoneScrolly reads to
+            drive its own pinned title+phone sequence, one step's worth
+            of scroll per feature. Height stays derived from the feature
+            count rather than hardcoded. */}
+        <div
+          className="phone-features-zone-m"
+          id="phone-features-zone-m"
+          aria-hidden="true"
+          style={{ height: `${features.length * 180}vh` }}
+        />
       </div>
     </RevealSection>
   );
