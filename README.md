@@ -71,3 +71,4 @@ Both paths render the same real captures in `public/media/`: video for anything 
 
 - Sideload-only personal project — no App Store build, no telemetry, no company behind it.
 - Both light and dark themes are fully token-driven; there's no separate dark-mode stylesheet to keep in sync.
+- The version in the top bar and the features lede is `lib/app-version.ts`. `.github/workflows/sync-app-version.yml` reads `APP_VERSION` from the Saizen app every Monday (and on manual dispatch) and commits a bump when the app is ahead. It does not rewrite feature copy or add a changelog. Run it locally with `pnpm sync-version`.

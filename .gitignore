@@ -9,3 +9,6 @@ next-env.d.ts
 *.tsbuildinfo
 *.claude/
 *.agents/
+
+# Local promo renders. Keep these off GitHub.
+Promo-Reels/

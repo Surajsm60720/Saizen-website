@@ -1,0 +1,44 @@
+name: Sync app version
+
+# Checks the Saizen app's APP_VERSION once a week and, when it is newer,
+# commits a bump of the version shown on this site. Feature copy is unchanged.
+on:
+  schedule:
+    # Mondays at 02:00 UTC (07:30 IST).
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-app-version
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check the Saizen app version
+        id: sync
+        run: node scripts/sync-app-version.mjs
+
+      - name: Commit version bump
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.sync.outputs.version }}
+        run: |
+          git add lib/app-version.ts
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Bump displayed app version to v${VERSION}"
+          git push

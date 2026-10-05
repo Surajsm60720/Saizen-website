@@ -1,5 +1,6 @@
 import { RevealSection } from './reveal-section';
 import { RevealRow } from './reveal-row';
+import { APP_VERSION } from '@/lib/app-version';
 import { features } from '@/lib/content';
 
 export function Features() {
@@ -8,7 +9,7 @@ export function Features() {
       <div className="wrap">
         <div className="sec-head">
           <h2 className="sec-title">What is in the build</h2>
-          <p className="sec-lede">Everything below is shipping in v1.4.2 and proven on a physical iPhone.</p>
+          <p className="sec-lede">Everything below is shipping in v{APP_VERSION} and proven on a physical iPhone.</p>
         </div>
         <div className="features-grid">
         <div className="rows rows--ledger">
